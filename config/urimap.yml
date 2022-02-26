@@ -1,0 +1,8 @@
+topics:
+  input:
+    observations:           "/cones/observed"
+    map:                    "/map/accumulated"
+
+params:
+  tracker:
+    clusterDist:            0.5                   # float: if the distance between two cones is less, they will be clustered

@@ -1,0 +1,5 @@
+<launch>
+  <node name="urimap" pkg="urimap" type="urimap_exec" output="screen">
+    <rosparam command="load" file="$(find urimap)/config/urimap.yml" />
+  </node>
+</launch>

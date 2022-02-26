@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>urimap</name>
+  <version>0.0.0</version>
+  <description>Urimap is the ultimate bb2map algorithm.</description>
+
+  <maintainer email="perception.bcnemotorsport@upc.edu">Oriol Gorriz</maintainer>
+
+  <license>MIT</license>
+
+  <!-- <author email="todo@todo.todo">Oriol Gorriz</author> -->
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>as_msgs</build_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>rospy</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_export_depend>as_msgs</build_export_depend>
+  <build_export_depend>roscpp</build_export_depend>
+  <build_export_depend>rospy</build_export_depend>
+  <build_export_depend>std_msgs</build_export_depend>
+  <exec_depend>as_msgs</exec_depend>
+  <exec_depend>roscpp</exec_depend>
+  <exec_depend>rospy</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+
+
+  <export>
+    <!-- Other tools can request additional information be placed here -->
+
+  </export>
+</package>

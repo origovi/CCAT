@@ -1,0 +1,7 @@
+.vscode/
+**.log
+**.pyc
+**.pcd
+build/
+bin/
+CATKIN_IGNORE
