@@ -4,15 +4,23 @@
 #include <as_msgs/ObservationArray.h>
 
 #include <cmath>
-
-#include "KDTree.hpp"
+#include <vector>
+#include "Observation.hpp"
 
 namespace cvrs {
 
-pointVec observationsToPointVec(const std::vector<as_msgs::Observation>& observations) {
-  pointVec res(observations.size());
+std::vector<Observation> as_obsVec2ObsVec(const std::vector<as_msgs::Observation>& observations) {
+  std::vector<Observation> res(observations.size());
   for (int i = 0; i < observations.size(); ++i) {
-    res[i] = Point(observations[i]);
+    res[i] = Observation(observations[i]);
+  }
+  return res;
+}
+
+std::vector<Point> obsVec2PointVec(const std::vector<Observation>& observations) {
+  std::vector<Point> res(observations.size());
+  for (int i = 0; i < observations.size(); ++i) {
+    res[i] = observations[i].p;
   }
   return res;
 }

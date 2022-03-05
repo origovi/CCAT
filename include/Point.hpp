@@ -31,6 +31,7 @@ class Point {
   /**
    * PUBLIC METHODS
    */
+  Point operator+(const Point &p) const;
   Point &operator+=(const Point &p);
   Point &operator-=(const Point &p);
   Point &operator/=(const int &num);

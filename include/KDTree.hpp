@@ -20,6 +20,10 @@
 #include <functional>
 #include <memory>
 #include <vector>
+#include <list>
+#include <cmath>
+#include <iterator>
+#include <limits>
 
 #include "Point.hpp"
 
@@ -95,7 +99,8 @@ class KDTree {
 
  public:
   KDTree() = default;
-  explicit KDTree(pointVec point_array);
+  explicit KDTree(const pointVec &point_array);
+  explicit KDTree(const std::list<Point> &point_list);
 
  private:
   KDNodePtr nearest_(           //

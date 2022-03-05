@@ -3,7 +3,7 @@ project(urimap)
 
 add_compile_options(-std=c++14)
 
-find_package(catkin REQUIRED COMPONENTS roscpp std_msgs as_msgs)
+find_package(catkin REQUIRED COMPONENTS roscpp std_msgs as_msgs pcl_ros)
 find_package(Eigen3 REQUIRED)
 
 generate_messages(DEPENDENCIES as_msgs)
@@ -24,10 +24,11 @@ add_executable(${PROJECT_NAME}_exec
 
 add_library(${PROJECT_NAME}
   src/KDTree.cpp
+  src/Preproc.cpp
   src/Matcher.cpp
-  src/Reference.cpp
   src/Tracker.cpp
   src/Point.cpp
+  src/Observation.cpp
 )
 
 add_dependencies(${PROJECT_NAME}_exec as_msgs_generate_messages_cpp)

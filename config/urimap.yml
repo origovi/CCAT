@@ -1,8 +1,19 @@
+common:
+  frequency:                10
+
 topics:
   input:
     observations:           "/cones/observed"
     map:                    "/map/accumulated"
 
-params:
-  tracker:
-    clusterDist:            0.5                   # float: if the distance between two cones is less, they will be clustered
+preproc:
+  cluster_dist:             0.5
+
+matcher:
+  reconstruct:
+    cone_size_width:        0.228                 # float: width of WEMAS cone
+    cone_size_height:       0.325                 # float: height of WEMAS cone
+    safety_factor:          1.2
+
+tracker:
+  clusterDist:              0.5                   # float: if the distance between two cones is less, they will be clustered

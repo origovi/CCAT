@@ -13,14 +13,6 @@
 
 #include "KDTree.hpp"
 
-#include <algorithm>
-#include <cmath>
-#include <functional>
-#include <iterator>
-#include <limits>
-#include <memory>
-#include <vector>
-
 KDNode::KDNode() = default;
 
 KDNode::KDNode(const Point &pt, const size_t &idx_, const KDNodePtr &left_,
@@ -138,12 +130,30 @@ KDNodePtr KDTree::make_tree(const pointIndexArr::iterator &begin,  //
   return std::make_shared<KDNode>(*middle, left, right);
 }
 
-KDTree::KDTree(pointVec point_array) {
+KDTree::KDTree(const pointVec &point_array) {
   leaf = std::make_shared<KDNode>();
   // iterators
   pointIndexArr arr;
   for (size_t i = 0; i < point_array.size(); i++) {
     arr.push_back(pointIndex(point_array.at(i), i));
+  }
+
+  auto begin = arr.begin();
+  auto end = arr.end();
+
+  size_t length = arr.size();
+  size_t level = 0;  // starting
+
+  root = KDTree::make_tree(begin, end, length, level);
+}
+
+KDTree::KDTree(const std::list<Point> &point_list) {
+  leaf = std::make_shared<KDNode>();
+  // iterators
+  pointIndexArr arr;
+  int i = 0;
+  for (std::list<Point>::const_iterator it = point_list.begin(); it != point_list.end(); it++) {
+    arr.push_back(pointIndex(*it, i++));
   }
 
   auto begin = arr.begin();
