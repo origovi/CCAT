@@ -4,13 +4,14 @@
 #include "Params.hpp"
 #include <as_msgs/Observation.h>
 #include <vector>
+#include <ros/ros.h>
 
 class Tracker {
  private:
   /**
    * CONSTRUCTORS
    */
-  Tracker(const Params::Tracker &params);
+  Tracker();
 
   /**
    * DESTRUCTORS
@@ -20,7 +21,8 @@ class Tracker {
   /**
    * PRIVATE ATTRIBUTES
    */
-  const Params::Tracker params_;
+  ros::NodeHandle *nh_;
+  Params::Tracker params_;
   
   
   /**
@@ -31,10 +33,13 @@ class Tracker {
    * PUBLIC METHODS
    */
   /* Singleton pattern */
-  static Tracker &getInstance(const Params::Tracker &params);
+  static Tracker &getInstance();
   Tracker(Tracker const &) = delete;
   void operator=(Tracker const &) = delete;
 
+  /* Init */
+  void init(ros::NodeHandle *const &nh, const Params::Tracker &params);
+  
   /* Callbacks */
 
   /* Getters */

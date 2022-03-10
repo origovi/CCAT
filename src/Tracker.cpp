@@ -3,7 +3,7 @@
 /**
  * CONSTRUCTORS
  */
-Tracker::Tracker(const Params::Tracker &params) : params_(params) {}
+Tracker::Tracker() {}
 
 /**
  * DESTRUCTORS
@@ -18,9 +18,15 @@ Tracker::~Tracker() {}
  * PUBLIC METHODS
  */
 /* Singleton pattern */
-Tracker &Tracker::getInstance(const Params::Tracker &params) {
-  static Tracker matcher(params);
+Tracker &Tracker::getInstance() {
+  static Tracker matcher;
   return matcher;
+}
+
+/* Init */
+void Tracker::init(ros::NodeHandle *const &nh, const Params::Tracker &params) {
+  nh_ = nh;
+  params_ = params;
 }
 /* Callbacks */
 

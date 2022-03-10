@@ -11,8 +11,8 @@ preproc:
 
 matcher:
   reconstruct:
-    cone_size_width:        0.228                 # float: width of WEMAS cone
-    cone_size_height:       0.325                 # float: height of WEMAS cone
+    cone_width:             0.228                 # float: width of WEMAS cone
+    cone_height:            0.325                 # float: height of WEMAS cone
     safety_factor:          1.2
 
 tracker:

@@ -3,9 +3,23 @@
 /**
  * CONSTRUCTORS
  */
-Observation::Observation() : p(), confidence(0.0) {}
-Observation::Observation(const float &x, const float &y, const float &z, const float &confidence) : p(x, y, z), confidence(confidence) {}
-Observation::Observation(const as_msgs::Observation & obs) : p(obs.x, obs.y, obs.z), confidence(obs.confidence) {}
+Observation::Observation() : pcl(pcl::make_shared<PCL>()), confidence(0.0) {}
+Observation::Observation(const PCL::Ptr &pcl, const float &confidence) : pcl(pcl), confidence(confidence) {
+  centroid = computeCentroid(*this->pcl);
+}
+
+Observation::Observation(const as_msgs::Observation &obs) : pcl(pcl::make_shared<PCL>()), centroid(Point(obs.centroid)), confidence(obs.confidence) {
+  pcl::fromROSMsg(obs.cloud, *pcl);
+}
+
+Observation::Observation(const std::list<const Observation *> &observationsToMean) : pcl(pcl::make_shared<PCL>()), confidence(0.0) {
+  for (const Observation *obs : observationsToMean) {
+    *pcl += *(obs->pcl);
+    confidence += obs->confidence;
+  }
+  centroid = computeCentroid(*pcl);
+  confidence /= observationsToMean.size();
+}
 
 /**
  * DESTRUCTORS
@@ -15,35 +29,15 @@ Observation::~Observation() {}
 /**
  * PRIVATE METHODS
  */
+Point Observation::computeCentroid(const PCL &pcl) {
+  PCLPoint p;
+  pcl::computeCentroid<PCLPoint, PCLPoint>(pcl, p);
+  return Point(p);
+}
 
 /**
  * PUBLIC METHODS
  */
-Observation &Observation::operator+=(const Observation &o) {
-  p += o.p;
-  confidence += o.confidence;
-  return *this;
-}
-
-Observation &Observation::operator-=(const Observation &o) {
-  p -= o.p;
-  confidence -= o.confidence;
-  return *this;
-}
-
-Observation &Observation::operator/=(const int &num) {
-  p /= num;
-  confidence /= num;
-  return *this;
-}
-
-/* Getters */
-const double &Observation::at(const size_t &ind) const {
-  return p.at(ind);
-}
-
-size_t Observation::size() const { return p.size(); }
-
 /* Getters */
 int Observation::getHash() const {
   return 0;

@@ -1,10 +1,18 @@
 #ifndef OBSERVATION_HPP
 #define OBSERVATION_HPP
 
+#include <pcl/common/centroid.h>
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
+#include <pcl_conversions/pcl_conversions.h>
+
 #include <cmath>
 
 #include "Point.hpp"
 #include "as_msgs/Observation.h"
+
+using PCLPoint = pcl::PointXYZI;
+using PCL = pcl::PointCloud<PCLPoint>;
 
 class Observation {
  private:
@@ -15,14 +23,17 @@ class Observation {
   /**
    * PRIVATE METHODS
    */
+  static Point computeCentroid(const PCL &pcl);
 
  public:
   /**
    * CONSTRUCTORS
    */
   Observation();
-  Observation(const float &x, const float &y, const float &z, const float &confidence);
+  Observation(const PCL::Ptr &pcl, const float &confidence);
+  Observation(const PCL::Ptr &pcl, const Point &centroid, const float &confidence);
   Observation(const as_msgs::Observation &obs);
+  Observation(const std::list<const Observation *> &observationsToMean);
 
   /**
    * DESTRUCTORS
@@ -32,19 +43,14 @@ class Observation {
   /**
    * PUBLIC ATTRIBUTES
    */
-  Point p;
+  PCL::Ptr pcl;
+  Point centroid;
   double confidence;
 
   /**
    * PUBLIC METHODS
    */
-  Observation &operator+=(const Observation &o);
-  Observation &operator-=(const Observation &o);
-  Observation &operator/=(const int &num);
-
-  /* Getters */
-  const double &at(const size_t &ind) const;
-  size_t size() const;
+  /* Operators */
   void addDetection();
 
   /* Getters */

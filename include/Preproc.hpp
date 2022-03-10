@@ -20,7 +20,7 @@ class Preproc {
   /**
    * CONSTRUCTORS
    */
-  Preproc(const Params::Preproc &params);
+  Preproc();
 
   /**
    * DESTRUCTORS
@@ -30,7 +30,8 @@ class Preproc {
   /**
    * PRIVATE ATTRIBUTES
    */
-  const Params::Preproc params_;
+  ros::NodeHandle *nh_;
+  Params::Preproc params_;
   bool hasData_;
   KDTree *observationsTree_;
   std::vector<Observation> currentObservations_;
@@ -38,8 +39,7 @@ class Preproc {
   /**
    * PRIVATE METHODS
    */
-  Observation centroidObs(const std::list<size_t> &points, const std::vector<Observation> &allObs) const;
-  std::list<size_t> possiblesSamePoint(const size_t &pointIndex, const KDTree &observationsKDT, const std::vector<Observation> &allObs, std::vector<bool> &visited) const;
+  std::list<const Observation *> possiblesSamePoint(const size_t &pointIndex, const KDTree &observationsKDT, const std::vector<Observation> &allObs, std::vector<bool> &visited) const;
   std::vector<Observation> preprocess(const as_msgs::ObservationArray &observations) const;
 
  public:
@@ -47,9 +47,12 @@ class Preproc {
    * PUBLIC METHODS
    */
   /* Singleton pattern */
-  static Preproc &getInstance(const Params::Preproc &params);
+  static Preproc &getInstance();
   Preproc(Preproc const &) = delete;
   void operator=(Preproc const &) = delete;
+
+  /* Init */
+  void init(ros::NodeHandle *const &nh, const Params::Preproc &params);
 
   /* Callbacks */
   void obsCallback(const as_msgs::ObservationArray &newObservations);

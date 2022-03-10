@@ -2,6 +2,7 @@
 #define PARAMS_HPP
 
 #include <string>
+#include <Eigen/Eigen>
 
 struct Params {
   struct Common {
@@ -20,10 +21,15 @@ struct Params {
   } preproc;
   struct Matcher {
     struct {
-      float cone_size_width;
-      float cone_size_height;
+      float cone_width;
+      float cone_height;
       float safety_factor;
     } reconstruct;
+    Eigen::Affine3d tf_right, tf_left;
+    struct Intrinsics {
+      float fx, fy;
+      float cx, cy;
+    } intrinsics_right, intrinsics_left;
   } matcher;
   struct Tracker {
     bool x;

@@ -3,7 +3,7 @@
 /**
  * CONSTRUCTORS
  */
-Preproc::Preproc(const Params::Preproc &params) : params_(params), hasData_(false) {}
+Preproc::Preproc() : hasData_(false) {}
 
 /**
  * DESTRUCTORS
@@ -14,10 +14,10 @@ Preproc::~Preproc() {}
  * PRIVATE METHODS
  */
 
-std::list<size_t> Preproc::possiblesSamePoint(const size_t &pointIndex, const KDTree &observationsKDT, const std::vector<Observation> &allObs, std::vector<bool> &visited) const {
-  std::list<size_t> res;
-  res.push_back(pointIndex);
-  std::vector<size_t> ar(observationsKDT.neighborhood_indices(allObs[pointIndex].p, params_.cluster_dist));
+std::list<const Observation *> Preproc::possiblesSamePoint(const size_t &pointIndex, const KDTree &observationsKDT, const std::vector<Observation> &allObs, std::vector<bool> &visited) const {
+  std::list<const Observation *> res;
+  res.push_back(&allObs[pointIndex]);
+  std::vector<size_t> ar(observationsKDT.neighborhood_indices(allObs[pointIndex].centroid, params_.cluster_dist));
   for (const size_t &ind : ar) {
     if (!visited[ind]) {
       visited[ind] = true;
@@ -25,14 +25,6 @@ std::list<size_t> Preproc::possiblesSamePoint(const size_t &pointIndex, const KD
     }
   }
   return res;
-}
-
-Observation Preproc::centroidObs(const std::list<size_t> &points, const std::vector<Observation> &allObs) const {
-  Observation res;
-  for (size_t i = 0; i < points.size(); ++i) {
-    res += allObs[i];
-  }
-  return res /= int(points.size());
 }
 
 std::vector<Observation> Preproc::preprocess(const as_msgs::ObservationArray &observations) const {
@@ -44,7 +36,7 @@ std::vector<Observation> Preproc::preprocess(const as_msgs::ObservationArray &ob
 
   for (size_t i = 0; i < observations.observations.size(); ++i) {
     if (!visited[i]) {
-      res.push_back(centroidObs(possiblesSamePoint(i, observationsKDT, allObs, visited), allObs));
+      res.emplace_back(possiblesSamePoint(i, observationsKDT, allObs, visited));
     }
   }
   return res;
@@ -55,9 +47,15 @@ std::vector<Observation> Preproc::preprocess(const as_msgs::ObservationArray &ob
  */
 
 /* Singleton pattern */
-Preproc &Preproc::getInstance(const Params::Preproc &params) {
-  static Preproc preproc(params);
+Preproc &Preproc::getInstance() {
+  static Preproc preproc;
   return preproc;
+}
+
+/* Init */
+void Preproc::init(ros::NodeHandle *const &nh, const Params::Preproc &params) {
+  nh_ = nh;
+  params_ = params;
 }
 
 /* Callbacks */

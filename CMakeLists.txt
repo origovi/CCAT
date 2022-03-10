@@ -3,7 +3,7 @@ project(urimap)
 
 add_compile_options(-std=c++14)
 
-find_package(catkin REQUIRED COMPONENTS roscpp std_msgs as_msgs pcl_ros)
+find_package(catkin REQUIRED COMPONENTS roscpp std_msgs as_msgs pcl_ros tf tf_conversions eigen_conversions image_transport cv_bridge)
 find_package(Eigen3 REQUIRED)
 
 generate_messages(DEPENDENCIES as_msgs)

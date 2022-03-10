@@ -35,7 +35,6 @@ KDNode::~KDNode() = default;
 
 double KDNode::coord(const size_t &idx) { return x.at(idx); }
 KDNode::operator bool() { return true; }
-KDNode::operator Point() { return x; }
 KDNode::operator size_t() { return index; }
 KDNode::operator pointIndex() { return pointIndex(x, index); }
 
@@ -178,7 +177,7 @@ KDNodePtr KDTree::nearest_(   //
     return NewKDNodePtr();  // basically, null
   }
 
-  Point branch_pt(*branch);
+  Point branch_pt(branch->x);
   size_t dim = branch_pt.size();
 
   d = dist2(branch_pt, pt);
@@ -230,7 +229,7 @@ KDNodePtr KDTree::nearest_(   //
 KDNodePtr KDTree::nearest_(const Point &pt) {
   size_t level = 0;
   // KDNodePtr best = branch;
-  double branch_dist = dist2(Point(*root), pt);
+  double branch_dist = dist2(root->x, pt);
   return nearest_(root,          // beginning of tree
                   pt,            // point we are querying
                   level,         // start from level 0
@@ -239,7 +238,7 @@ KDNodePtr KDTree::nearest_(const Point &pt) {
 };
 
 Point KDTree::nearest_point(const Point &pt) {
-  return Point(*nearest_(pt));
+  return nearest_(pt)->x;
 };
 size_t KDTree::nearest_index(const Point &pt) {
   return size_t(*nearest_(pt));
@@ -247,7 +246,7 @@ size_t KDTree::nearest_index(const Point &pt) {
 
 pointIndex KDTree::nearest_pointIndex(const Point &pt) {
   KDNodePtr Nearest = nearest_(pt);
-  return pointIndex(Point(*Nearest), size_t(*Nearest));
+  return pointIndex(Nearest->x, size_t(*Nearest));
 }
 
 pointIndexArr KDTree::neighborhood_(  //
@@ -268,8 +267,8 @@ pointIndexArr KDTree::neighborhood_(  //
 
   double r2 = rad * rad;
 
-  d = dist2(Point(*branch), pt);
-  dx = Point(*branch).at(level) - pt.at(level);
+  d = dist2(branch->x, pt);
+  dx = branch->x.at(level) - pt.at(level);
   dx2 = dx * dx;
 
   pointIndexArr nbh, nbh_s, nbh_o;

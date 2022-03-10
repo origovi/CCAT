@@ -51,7 +51,6 @@ class KDNode {
 
   // conversions
   explicit operator bool();
-  explicit operator Point();
   explicit operator size_t();
   explicit operator pointIndex();
 };

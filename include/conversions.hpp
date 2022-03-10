@@ -20,7 +20,7 @@ std::vector<Observation> as_obsVec2ObsVec(const std::vector<as_msgs::Observation
 std::vector<Point> obsVec2PointVec(const std::vector<Observation>& observations) {
   std::vector<Point> res(observations.size());
   for (int i = 0; i < observations.size(); ++i) {
-    res[i] = observations[i].p;
+    res[i] = observations[i].centroid;
   }
   return res;
 }
