@@ -1,7 +1,7 @@
 #ifndef CONE_HPP
 #define CONE_HPP
 
-#include "Observation.hpp"
+#include "structures/Observation.hpp"
 
 class Cone : public Observation {
  public:

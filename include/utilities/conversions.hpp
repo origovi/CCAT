@@ -5,7 +5,7 @@
 
 #include <cmath>
 #include <vector>
-#include "Observation.hpp"
+#include "structures/Observation.hpp"
 
 namespace cvrs {
 

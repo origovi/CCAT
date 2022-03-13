@@ -1,4 +1,4 @@
-#include "Point.hpp"
+#include "structures/Point.hpp"
 
 /**
  * CONSTRUCTORS

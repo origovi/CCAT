@@ -25,7 +25,7 @@
 #include <iterator>
 #include <limits>
 
-#include "Point.hpp"
+#include "structures/Point.hpp"
 
 using indexArr = std::vector<size_t>;
 using pointIndex = typename std::pair<Point, size_t>;

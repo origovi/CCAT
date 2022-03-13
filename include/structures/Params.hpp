@@ -2,7 +2,7 @@
 #define PARAMS_HPP
 
 #include <string>
-#include <Eigen/Eigen>
+#include <vector>
 
 struct Params {
   struct Common {

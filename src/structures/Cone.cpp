@@ -1,4 +1,4 @@
-#include "Cone.hpp"
+#include "structures/Cone.hpp"
 
 /**
  * CONSTRUCTORS

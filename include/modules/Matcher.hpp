@@ -16,8 +16,8 @@
 
 #include <vector>
 
-#include "Observation.hpp"
-#include "Params.hpp"
+#include "structures/Observation.hpp"
+#include "structures/Params.hpp"
 
 using PCLPoint = pcl::PointXYZI;
 using PCL = pcl::PointCloud<PCLPoint>;

@@ -1,7 +1,7 @@
 #ifndef TRACKER_HPP
 #define TRACKER_HPP
 
-#include "Params.hpp"
+#include "structures/Params.hpp"
 #include <as_msgs/Observation.h>
 #include <vector>
 #include <ros/ros.h>

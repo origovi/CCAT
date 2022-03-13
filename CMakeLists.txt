@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(urimap)
+project(ccat)
 
 add_compile_options(-std=c++14)
 
@@ -23,12 +23,13 @@ add_executable(${PROJECT_NAME}_exec
 )
 
 add_library(${PROJECT_NAME}
-  src/KDTree.cpp
-  src/Preproc.cpp
-  src/Matcher.cpp
-  src/Tracker.cpp
-  src/Point.cpp
-  src/Observation.cpp
+  src/structures/KDTree.cpp
+  src/modules/Preproc.cpp
+  src/modules/Matcher.cpp
+  src/modules/Tracker.cpp
+  src/structures/Point.cpp
+  src/structures/Observation.cpp
+  src/structures/Cone.cpp
 )
 
 add_dependencies(${PROJECT_NAME}_exec as_msgs_generate_messages_cpp)

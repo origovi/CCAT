@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>urimap</name>
+  <name>ccat</name>
   <version>0.0.0</version>
-  <description>Urimap is the ultimate bb2map algorithm.</description>
+  <description>CCAT is the ultimate bb2map algorithm.</description>
 
   <maintainer email="perception.bcnemotorsport@upc.edu">Oriol Gorriz</maintainer>
 

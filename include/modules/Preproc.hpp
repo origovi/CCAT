@@ -9,11 +9,11 @@
 #include <unordered_map>
 #include <vector>
 
-#include "KDTree.hpp"
-#include "Observation.hpp"
-#include "Params.hpp"
-#include "Point.hpp"
-#include "conversions.hpp"
+#include "structures/KDTree.hpp"
+#include "structures/Observation.hpp"
+#include "structures/Params.hpp"
+#include "structures/Point.hpp"
+#include "utilities/conversions.hpp"
 
 class Preproc {
  private:

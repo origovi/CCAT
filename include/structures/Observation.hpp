@@ -8,7 +8,7 @@
 
 #include <cmath>
 
-#include "Point.hpp"
+#include "structures/Point.hpp"
 #include "as_msgs/Observation.h"
 
 using PCLPoint = pcl::PointXYZI;

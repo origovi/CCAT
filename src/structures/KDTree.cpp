@@ -11,7 +11,7 @@
  *
  */
 
-#include "KDTree.hpp"
+#include "structures/KDTree.hpp"
 
 KDNode::KDNode() = default;
 

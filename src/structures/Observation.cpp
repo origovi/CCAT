@@ -1,4 +1,4 @@
-#include "Observation.hpp"
+#include "structures/Observation.hpp"
 
 /**
  * CONSTRUCTORS
