@@ -10,35 +10,11 @@
 #include "modules/Preproc.hpp"
 #include "modules/Tracker.hpp"
 
-void loadParams(Params &params, const ros::NodeHandle &nh) {
-  /* Common */
-  nh.param<int>("ccat/common/frequency", params.common.frequency, 10);
-
-  /* Topics */
-  nh.param<std::string>("ccat/topics/input/observations", params.common.topics.input.observations, "/cones/observed");
-  nh.param<std::string>("ccat/topics/input/map", params.common.topics.input.map, "/map/accumulated");
-
-  /* Preproc */
-  nh.param<float>("ccat/preproc/cluster_dist", params.preproc.cluster_dist, 0.5);
-
-  /* Matcher */
-  nh.param<std::vector<double>>("ccat/extrinsics/left/translation", params.matcher.extrinsics_left.translation, std::vector<double>(3, 0.0));
-  nh.param<std::vector<double>>("ccat/extrinsics/left/euler_angles", params.matcher.extrinsics_left.euler_angles, std::vector<double>(3, 0.0));
-  nh.param<std::vector<double>>("ccat/extrinsics/right/translation", params.matcher.extrinsics_right.translation, std::vector<double>(3, 0.0));
-  nh.param<std::vector<double>>("ccat/extrinsics/right/euler_angles", params.matcher.extrinsics_right.euler_angles, std::vector<double>(3, 0.0));
-  nh.param<std::vector<double>>("ccat/intrinsics/left", params.matcher.intrinsics_left, std::vector<double>(9, 0.0));
-  nh.param<std::vector<double>>("ccat/intrinsics/right", params.matcher.intrinsics_right, std::vector<double>(9, 0.0));
-  
-  /* Tracker */
-  //nh.param<float>("ccat/preproc/clusterDist", params.tracker.clusterDist, 0.5);
-}
-
 int main(int argc, char **argv) {
-  ros::init(argc, argv, "ccat");
+  ros::init(argc, argv, "/AS/P/ccat");
   ros::NodeHandle *const nh(new ros::NodeHandle);
 
-  Params params;
-  loadParams(params, *nh);
+  Params params(*nh);
 
   // Object instances
   Preproc &preproc = Preproc::getInstance();
@@ -49,14 +25,14 @@ int main(int argc, char **argv) {
   tracker.init(nh, params.tracker);
 
   // Subscribers & Publisher
-  ros::Subscriber subPau = nh->subscribe("/cones/observed", 1, &Preproc::obsCallback, &preproc);
-  ros::Subscriber subMap = nh->subscribe("/map/observed", 1, &Matcher::mapCallback, &matcher);
+  ros::Subscriber subPau = nh->subscribe(params.common.topics.input.observations, 1, &Preproc::obsCallback, &preproc);
+  // ros::Subscriber subMap = nh->subscribe("/map/observed", 1, &Matcher::mapCallback, &matcher);
 
-  message_filters::Subscriber<nav_msgs::Odometry> state_carSub(*nh, "/state/car", 100);
+  message_filters::Subscriber<nav_msgs::Odometry> state_carSub(*nh, params.common.topics.input.odometry, 100);
 
   // cameras detections
-  message_filters::Subscriber<geometry_msgs::PoseArray> left_detectionsSub(*nh, "/camera/left/detections", 100);
-  message_filters::Subscriber<geometry_msgs::PoseArray> right_detectionsSub(*nh, "/camera/right/detections", 100);
+  message_filters::Subscriber<geometry_msgs::PoseArray> left_detectionsSub(*nh, params.matcher.topics.input.left_detections, 100);
+  message_filters::Subscriber<geometry_msgs::PoseArray> right_detectionsSub(*nh, params.matcher.topics.input.right_detections, 100);
 
   typedef message_filters::sync_policies::ApproximateTime<nav_msgs::Odometry, geometry_msgs::PoseArray, geometry_msgs::PoseArray> MySyncPolicy;
   message_filters::Synchronizer<MySyncPolicy> syncDetections(MySyncPolicy(100), state_carSub, left_detectionsSub, right_detectionsSub);
@@ -67,6 +43,7 @@ int main(int argc, char **argv) {
     ros::spinOnce();
     if (preproc.hasData() and matcher.hasData()) {
       matcher.run(preproc.getCurrentObservations());
+      //tracker.run(matcher.getCurrentCones());
     }
     rate.sleep();
   }

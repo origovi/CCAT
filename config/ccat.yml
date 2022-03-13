@@ -1,0 +1,22 @@
+common:
+  frequency:                  10
+  topics:
+    input:
+      observations:           "/AS/P/pcl_filtering/observations"
+      map:                    "/map/accumulated"
+      odometry:               "/limovelo/state"
+
+preproc:
+  cluster_dist:               0.5
+
+matcher:
+  topics:
+    input:
+      left_detections:        "/camera/left/detections"
+      right_detections:       "/camera/right/detections"
+    output:
+      left_projected:         "/AS/P/ccat/left_projected"
+      right_projected:        "/AS/P/ccat/right_projected"
+
+tracker:
+  clusterDist:                0.5                   # float: if the distance between two cones is less, they will be clustered

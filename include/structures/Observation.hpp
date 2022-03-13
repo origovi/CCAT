@@ -8,8 +8,8 @@
 
 #include <cmath>
 
-#include "structures/Point.hpp"
 #include "as_msgs/Observation.h"
+#include "structures/Point.hpp"
 
 using PCLPoint = pcl::PointXYZI;
 using PCL = pcl::PointCloud<PCLPoint>;
@@ -19,14 +19,16 @@ class Observation {
   static Point computeCentroid(const PCL &pcl);
 
  public:
+  /**
+   * PUBLIC CONSTRUCTORS AND DESTRUCTOR
+   */
+
   Observation();
   Observation(const PCL::Ptr &pcl, const float &confidence);
   Observation(const PCL::Ptr &pcl, const Point &centroid, const float &confidence);
   Observation(const as_msgs::Observation &obs);
   Observation(const std::list<const Observation *> &observationsToMean);
-
   ~Observation();
-
 
   /* PUBLIC ATTRIBUTES */
 

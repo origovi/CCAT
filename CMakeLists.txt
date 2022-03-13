@@ -24,6 +24,7 @@ add_executable(${PROJECT_NAME}_exec
 
 add_library(${PROJECT_NAME}
   src/structures/KDTree.cpp
+  src/structures/Params.cpp
   src/modules/Preproc.cpp
   src/modules/Matcher.cpp
   src/modules/Tracker.cpp

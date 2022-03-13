@@ -9,35 +9,37 @@
 class Tracker {
  private:
   /**
-   * CONSTRUCTORS
+   * PRIVATE CONSTRUCTOR ANC DESTRUCTOR
    */
-  Tracker();
 
-  /**
-   * DESTRUCTORS
-   */
-  ~Tracker();
+  Tracker();
 
   /**
    * PRIVATE ATTRIBUTES
    */
+  
   ros::NodeHandle *nh_;
   Params::Tracker params_;
-  
   
   /**
    * PRIVATE METHODS
    */
+
  public:
+  ~Tracker();
+
   /**
    * PUBLIC METHODS
    */
+
   /* Singleton pattern */
+
   static Tracker &getInstance();
   Tracker(Tracker const &) = delete;
   void operator=(Tracker const &) = delete;
 
   /* Init */
+
   void init(ros::NodeHandle *const &nh, const Params::Tracker &params);
   
   /* Callbacks */

@@ -1,9 +1,9 @@
 <launch>
-  <node name="ccat" pkg="ccat" type="ccat_exec" output="screen">
+  <node name="ccat" pkg="ccat" type="ccat_exec" output="screen" ns="/AS/P">
     <rosparam command="load" file="$(find ccat)/config/ccat.yml" />
-    <rosparam command="load" file="$(find ccat)/config/params/extrinsics_left.yml" ns="/extrinsics/left" />
-    <rosparam command="load" file="$(find ccat)/config/params/extrinsics_right.yml" ns="/extrinsics/right" />
-    <rosparam command="load" file="$(find ccat)/config/params/intrinsics_left.yml" ns="/intrinsics/left" />
-    <rosparam command="load" file="$(find ccat)/config/params/intrinsics_right.yml" ns="/intrinsics/right" />
+    <rosparam command="load" file="$(find ccat)/config/calibration/extrinsics_left.yml" ns="/AS/P/ccat/extrinsics/left" />
+    <rosparam command="load" file="$(find ccat)/config/calibration/extrinsics_right.yml" ns="/AS/P/ccat/extrinsics/right" />
+    <rosparam command="load" file="$(find ccat)/config/calibration/intrinsics_left.yml" ns="/AS/P/ccat/intrinsics/left" />
+    <rosparam command="load" file="$(find ccat)/config/calibration/intrinsics_right.yml" ns="/AS/P/ccat/intrinsics/right" />
   </node>
 </launch>

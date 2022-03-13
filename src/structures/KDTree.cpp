@@ -256,8 +256,7 @@ pointIndexArr KDTree::neighborhood_(  //
     const size_t &level               //
 ) const {
   double d, dx, dx2;
-
-  if (!bool(*branch)) {
+  if (!branch or !bool(*branch)) {
     // branch has no point, means it is a leaf,
     // no points to add
     return pointIndexArr();
@@ -266,7 +265,6 @@ pointIndexArr KDTree::neighborhood_(  //
   size_t dim = pt.size();
 
   double r2 = rad * rad;
-
   d = dist2(branch->x, pt);
   dx = branch->x.at(level) - pt.at(level);
   dx2 = dx * dx;

@@ -1,13 +1,9 @@
 #include "modules/Preproc.hpp"
 
 /**
- * CONSTRUCTORS
+ * CONSTRUCTORS AND DESTRUCTOR
  */
 Preproc::Preproc() : hasData_(false) {}
-
-/**
- * DESTRUCTORS
- */
 Preproc::~Preproc() {}
 
 /**
@@ -47,29 +43,33 @@ std::vector<Observation> Preproc::preprocess(const as_msgs::ObservationArray &ob
  */
 
 /* Singleton pattern */
+
 Preproc &Preproc::getInstance() {
   static Preproc preproc;
   return preproc;
 }
 
 /* Init */
+
 void Preproc::init(ros::NodeHandle *const &nh, const Params::Preproc &params) {
   nh_ = nh;
   params_ = params;
 }
 
 /* Callbacks */
+
 void Preproc::obsCallback(const as_msgs::ObservationArray &newObservations) {
   if (!newObservations.observations.empty()) {
+    ROS_WARN("obsCallback");
     currentObservations_ = preprocess(newObservations);
+    std::cout << "orig size: " << newObservations.observations.size() << " process size: " << currentObservations_.size() << std::endl;
+    ROS_WARN("obsCallbackEnd");
     hasData_ = true;
-    //KDTree *newObservationsKDT = new KDTree(preprocess(newObservations));
-    //delete observationsTree_;
-    //observationsTree_ = new KDTree(observationsToPointVec(newObservations.observations));
   }
 }
 
 /* Getters */
+
 const std::vector<Observation> &Preproc::getCurrentObservations() const {
   return currentObservations_;
 }

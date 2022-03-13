@@ -1,6 +1,8 @@
 #ifndef PARAMS_HPP
 #define PARAMS_HPP
 
+#include <ros/ros.h>
+
 #include <string>
 #include <vector>
 
@@ -10,6 +12,7 @@ struct Params {
     struct {
       struct {
         std::string observations;
+        std::string odometry;
         std::string map;
       } input;
       struct {
@@ -35,8 +38,10 @@ struct Params {
     std::vector<double> intrinsics_right, intrinsics_left;
     struct {
       struct {
+        std::string right_detections, left_detections;
       } input;
       struct {
+        std::string projected_right, projected_left;
       } output;
     } topics;
   } matcher;
@@ -49,6 +54,7 @@ struct Params {
       } output;
     } topics;
   } tracker;
+  Params(const ros::NodeHandle &nh);
 };
 
 #endif

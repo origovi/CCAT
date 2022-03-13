@@ -5,6 +5,7 @@
 
 #include <cmath>
 #include <pcl/point_types.h>
+#include <iostream>
 
 class Point {
  private:
@@ -16,23 +17,26 @@ class Point {
    * PRIVATE METHODS
    */
  public:
-  double x, y, z;
   /**
-   * CONSTRUCTORS
+   * CONSTRUCTORS AND DESTRUCTOR
    */
+
   Point();
   Point(const double &x, const double &y, const double &z);
   template<typename T>
   Point(const T &point);
+  ~Point();
 
   /**
-   * DESTRUCTORS
+   * PUBLIC ATTRIBUTES
    */
-  ~Point();
+
+  double x, y, z;
 
   /**
    * PUBLIC METHODS
    */
+  
   Point operator+(const Point &p) const;
   Point operator-(const Point &p) const;
   
@@ -54,6 +58,8 @@ class Point {
   static inline double distSq(const Point &p1, const Point &p2) {
     return pow(p1.x - p2.x, 2) + pow(p1.y - p2.y, 2) + pow(p1.z - p2.z, 2);
   }
+
+  friend std::ostream &operator<<(std::ostream &os, const Point &p);
   
   /* Getters */
   const double &at(const size_t &ind) const;
