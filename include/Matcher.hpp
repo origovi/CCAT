@@ -44,7 +44,10 @@ class Matcher {
   PCL::Ptr actualMap_;
   nav_msgs::Odometry::ConstPtr carLocation_;
 
-  Eigen::Affine3d leftCamTf_, rightCamTf_;
+  Eigen::Affine3d extrinsics_left_, extrinsics_right_;
+  struct Intrinsics {
+    double fx, fy, cx, cy;
+  } intrinsics_left_, intrinsics_right_;
   geometry_msgs::PoseArray::ConstPtr leftBbs_, rightBbs_;
 
   /* Publishers */
@@ -56,8 +59,8 @@ class Matcher {
   void locationTransformPCLs(const std::vector<PCL::Ptr> &reconstructions) const;
   void cameraTransformPCLs(const std::vector<PCL::Ptr> &transformedPCL, const Eigen::Affine3d &camTf) const;
   std::vector<PCL::Ptr> reconstructedPCLs(const std::vector<Observation> &observations) const;
-  cv::Point2d projectPoint(const PCLPoint &pointToProject, const Params::Matcher::Intrinsics &intrinsics) const;
-  void publishImage(const std::vector<PCL::Ptr> &recons, const geometry_msgs::PoseArray::ConstPtr &bbs, const image_transport::Publisher &imPub, const Params::Matcher::Intrinsics &intrinsics) const;
+  cv::Point2d projectPoint(const PCLPoint &pointToProject, const Matcher::Intrinsics &intrinsics) const;
+  void publishImage(const std::vector<PCL::Ptr> &recons, const geometry_msgs::PoseArray::ConstPtr &bbs, const image_transport::Publisher &imPub, const Matcher::Intrinsics &intrinsics) const;
 
  public:
   /**

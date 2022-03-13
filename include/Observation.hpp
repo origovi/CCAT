@@ -15,46 +15,24 @@ using PCLPoint = pcl::PointXYZI;
 using PCL = pcl::PointCloud<PCLPoint>;
 
 class Observation {
- private:
-  /**
-   * PRIVATE ATTRIBUTES
-   */
-
-  /**
-   * PRIVATE METHODS
-   */
+ protected:
   static Point computeCentroid(const PCL &pcl);
 
  public:
-  /**
-   * CONSTRUCTORS
-   */
   Observation();
   Observation(const PCL::Ptr &pcl, const float &confidence);
   Observation(const PCL::Ptr &pcl, const Point &centroid, const float &confidence);
   Observation(const as_msgs::Observation &obs);
   Observation(const std::list<const Observation *> &observationsToMean);
 
-  /**
-   * DESTRUCTORS
-   */
   ~Observation();
 
-  /**
-   * PUBLIC ATTRIBUTES
-   */
+
+  /* PUBLIC ATTRIBUTES */
+
   PCL::Ptr pcl;
   Point centroid;
   double confidence;
-
-  /**
-   * PUBLIC METHODS
-   */
-  /* Operators */
-  void addDetection();
-
-  /* Getters */
-  int getHash() const;
 };
 
 #endif  // OBSERVATION_HPP

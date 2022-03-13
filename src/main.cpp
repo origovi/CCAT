@@ -14,17 +14,20 @@ void loadParams(Params &params, const ros::NodeHandle &nh) {
   nh.param<int>("urimap/common/frequency", params.common.frequency, 10);
 
   /* Topics */
-  nh.param<std::string>("urimap/topics/input/observations", params.topics.input.observations, "/cones/observed");
-  nh.param<std::string>("urimap/topics/input/map", params.topics.input.map, "/map/accumulated");
+  nh.param<std::string>("urimap/topics/input/observations", params.common.topics.input.observations, "/cones/observed");
+  nh.param<std::string>("urimap/topics/input/map", params.common.topics.input.map, "/map/accumulated");
 
   /* Preproc */
   nh.param<float>("urimap/preproc/cluster_dist", params.preproc.cluster_dist, 0.5);
 
   /* Matcher */
-  nh.param<float>("urimap/matcher/reconstruct/cone_width", params.matcher.reconstruct.cone_width, 0.228);
-  nh.param<float>("urimap/matcher/reconstruct/cone_height", params.matcher.reconstruct.cone_height, 0.325);
-  nh.param<float>("urimap/matcher/reconstruct/safety_factor", params.matcher.reconstruct.safety_factor, 1.2);
-
+  nh.param<std::vector<double>>("urimap/extrinsics/left/translation", params.matcher.extrinsics_left.translation, std::vector<double>(3, 0.0));
+  nh.param<std::vector<double>>("urimap/extrinsics/left/euler_angles", params.matcher.extrinsics_left.euler_angles, std::vector<double>(3, 0.0));
+  nh.param<std::vector<double>>("urimap/extrinsics/right/translation", params.matcher.extrinsics_right.translation, std::vector<double>(3, 0.0));
+  nh.param<std::vector<double>>("urimap/extrinsics/right/euler_angles", params.matcher.extrinsics_right.euler_angles, std::vector<double>(3, 0.0));
+  nh.param<std::vector<double>>("urimap/intrinsics/left", params.matcher.intrinsics_left, std::vector<double>(9, 0.0));
+  nh.param<std::vector<double>>("urimap/intrinsics/right", params.matcher.intrinsics_right, std::vector<double>(9, 0.0));
+  
   /* Tracker */
   //nh.param<float>("urimap/preproc/clusterDist", params.tracker.clusterDist, 0.5);
 }

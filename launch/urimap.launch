@@ -1,5 +1,9 @@
 <launch>
   <node name="urimap" pkg="urimap" type="urimap_exec" output="screen">
     <rosparam command="load" file="$(find urimap)/config/urimap.yml" />
+    <rosparam command="load" file="$(find urimap)/config/params/extrinsics_left.yml" ns="/extrinsics/left" />
+    <rosparam command="load" file="$(find urimap)/config/params/extrinsics_right.yml" ns="/extrinsics/right" />
+    <rosparam command="load" file="$(find urimap)/config/params/intrinsics_left.yml" ns="/intrinsics/left" />
+    <rosparam command="load" file="$(find urimap)/config/params/intrinsics_right.yml" ns="/intrinsics/right" />
   </node>
 </launch>

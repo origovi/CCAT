@@ -21,13 +21,15 @@ void Matcher::locationTransformPCLs(const std::vector<PCL::Ptr> &reconstructions
   }
 }
 
-void Matcher::cameraTransformPCLs(const std::vector<PCL::Ptr> &reconstructions, const Eigen::Affine3d &camTf) const {
+void Matcher::cameraTransformPCLs(const std::vector<PCL::Ptr> &reconstructions,
+                                  const Eigen::Affine3d &camTf) const {
   for (size_t i = 0; i < reconstructions.size(); i++) {
     pcl::transformPointCloud(*actualMap_, *reconstructions[i], camTf);
   }
 }
 
-std::vector<PCL::Ptr> Matcher::reconstructedPCLs(const std::vector<Observation> &observations) const {
+std::vector<PCL::Ptr> Matcher::reconstructedPCLs(
+    const std::vector<Observation> &observations) const {
   std::vector<PCL::Ptr> res(observations.size());
   for (size_t i = 0; i < observations.size(); i++) {
     res[i] = observations[i].pcl;
@@ -35,8 +37,10 @@ std::vector<PCL::Ptr> Matcher::reconstructedPCLs(const std::vector<Observation> 
   return res;
 }
 
-cv::Point2d Matcher::projectPoint(const PCLPoint &pointToProject, const Params::Matcher::Intrinsics &intrinsics) const {
-  // Reassign axes: camera frame has different axes (X pointing right, Y down and Z forward)
+cv::Point2d Matcher::projectPoint(const PCLPoint &pointToProject,
+                                  const Matcher::Intrinsics &intrinsics) const {
+  // Reassign axes: camera frame has different axes (X pointing right, Y down
+  // and Z forward)
   Point p_corrected;
   p_corrected.x = -pointToProject.y;
   p_corrected.y = -pointToProject.z;
@@ -47,7 +51,10 @@ cv::Point2d Matcher::projectPoint(const PCLPoint &pointToProject, const Params::
   return cv::Point2d(U / p_corrected.z, V / p_corrected.z);
 }
 
-void Matcher::publishImage(const std::vector<PCL::Ptr> &recons, const geometry_msgs::PoseArray::ConstPtr &bbs, const image_transport::Publisher &imPub, const Params::Matcher::Intrinsics &intrinsics) const {
+void Matcher::publishImage(const std::vector<PCL::Ptr> &recons,
+                           const geometry_msgs::PoseArray::ConstPtr &bbs,
+                           const image_transport::Publisher &imPub,
+                           const Matcher::Intrinsics &intrinsics) const {
   cv::Mat image(768, 1024, CV_8UC3, cv::Scalar(255, 255, 255));
 
   // Paint the bbs
@@ -88,6 +95,22 @@ void Matcher::init(ros::NodeHandle *const &nh, const Params::Matcher &params) {
   nh_ = nh;
   params_ = params;
 
+  // Left Tf
+  Eigen::Quaterniond leftRotation(
+      Eigen::AngleAxisd(params_.extrinsics_left.euler_angles[0], Eigen::Vector3d::UnitX()) *
+      Eigen::AngleAxisd(params_.extrinsics_left.euler_angles[1], Eigen::Vector3d::UnitY()) *
+      Eigen::AngleAxisd(params_.extrinsics_left.euler_angles[2], Eigen::Vector3d::UnitZ()));
+  extrinsics_left_.linear() = leftRotation.toRotationMatrix();
+  extrinsics_left_.translation() = Eigen::Vector3d(params_.extrinsics_left.translation.data());
+
+  // Right Tf
+  Eigen::Quaterniond rightRotation(
+      Eigen::AngleAxisd(params_.extrinsics_right.euler_angles[0], Eigen::Vector3d::UnitX()) *
+      Eigen::AngleAxisd(params_.extrinsics_right.euler_angles[1], Eigen::Vector3d::UnitY()) *
+      Eigen::AngleAxisd(params_.extrinsics_right.euler_angles[2], Eigen::Vector3d::UnitZ()));
+  extrinsics_right_.linear() = rightRotation.toRotationMatrix();
+  extrinsics_right_.translation() = Eigen::Vector3d(params_.extrinsics_right.translation.data());
+
   // Publishers declaration
   image_transport::ImageTransport image_transport(*nh);
   leftProjectedPub_ = image_transport.advertise("/leftImage", 1);
@@ -102,7 +125,9 @@ void Matcher::mapCallback(const sensor_msgs::PointCloud2::ConstPtr &cloud_msg) {
     pcl::fromROSMsg(*cloud_msg, *actualMap_);
 }
 
-void Matcher::locationAndBbsCbk(const nav_msgs::Odometry::ConstPtr &carPos, const geometry_msgs::PoseArray::ConstPtr &leftDetections, const geometry_msgs::PoseArray::ConstPtr &rightDetections) {
+void Matcher::locationAndBbsCbk(const nav_msgs::Odometry::ConstPtr &carPos,
+                                const geometry_msgs::PoseArray::ConstPtr &leftDetections,
+                                const geometry_msgs::PoseArray::ConstPtr &rightDetections) {
   carLocation_ = carPos;
   leftBbs_ = leftDetections;
   rightBbs_ = rightDetections;
@@ -120,14 +145,14 @@ void Matcher::run(const std::vector<Observation> &observations) {
     reconsR[i] = pcl::make_shared<PCL>(*reconsL[i]);
   }
 
-  cameraTransformPCLs(reconsL, params_.tf_left);
-  cameraTransformPCLs(reconsR, params_.tf_right);
+  cameraTransformPCLs(reconsL, extrinsics_left_);
+  cameraTransformPCLs(reconsR, extrinsics_right_);
 
-  publishImage(reconsL, leftBbs_, leftProjectedPub_, params_.intrinsics_left);
-  publishImage(reconsR, rightBbs_, rightProjectedPub_, params_.intrinsics_right);
+  publishImage(reconsL, leftBbs_, leftProjectedPub_, intrinsics_left_);
+  publishImage(reconsR, rightBbs_, rightProjectedPub_, intrinsics_right_);
+
+  
 }
 
 /* Getters */
-const bool &Matcher::hasData() const {
-  return hasData_;
-}
+const bool &Matcher::hasData() const { return hasData_; }

@@ -27,18 +27,10 @@ Observation::Observation(const std::list<const Observation *> &observationsToMea
 Observation::~Observation() {}
 
 /**
- * PRIVATE METHODS
+ * PROTECTED METHODS
  */
 Point Observation::computeCentroid(const PCL &pcl) {
   PCLPoint p;
   pcl::computeCentroid<PCLPoint, PCLPoint>(pcl, p);
   return Point(p);
-}
-
-/**
- * PUBLIC METHODS
- */
-/* Getters */
-int Observation::getHash() const {
-  return 0;
 }
