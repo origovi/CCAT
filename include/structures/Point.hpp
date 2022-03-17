@@ -6,6 +6,7 @@
 #include <cmath>
 #include <pcl/point_types.h>
 #include <iostream>
+#include <Eigen/Geometry>
 
 class Point {
  private:
@@ -60,6 +61,8 @@ class Point {
   }
 
   friend std::ostream &operator<<(std::ostream &os, const Point &p);
+
+  void transform(const Eigen::Affine3d &tf);
   
   /* Getters */
   const double &at(const size_t &ind) const;

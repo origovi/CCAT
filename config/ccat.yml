@@ -5,11 +5,16 @@ common:
       observations:           "/AS/P/pcl_filtering/observations"
       map:                    "/map/accumulated"
       odometry:               "/limovelo/state"
+      left_detections:        "/camera/left/detections"
+      right_detections:       "/camera/right/detections"
 
 preproc:
   cluster_dist:               0.5
 
 matcher:
+  common:
+    image_width:               1024
+    image_height:              768
   topics:
     input:
       left_detections:        "/camera/left/detections"

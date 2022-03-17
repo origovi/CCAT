@@ -1,0 +1,39 @@
+!!python/object/new:dynamic_reconfigure.encoding.Config
+dictitems:
+  groups: !!python/object/new:dynamic_reconfigure.encoding.Config
+    dictitems:
+      groups: !!python/object/new:dynamic_reconfigure.encoding.Config
+        state: []
+      id: 0
+      name: Default
+      parameters: !!python/object/new:dynamic_reconfigure.encoding.Config
+        state: []
+      parent: 0
+      pitch_left: 1.31
+      pitch_right: -0.042635106542868326
+      roll_left: -0.2
+      roll_right: 0.04908282358659542
+      state: true
+      type: ''
+      x_left: -0.42
+      x_right: 2.1974776
+      y_left: -0.5399999999999999
+      y_right: -0.08864819
+      yaw_left: -0.6283185307179586
+      yaw_right: 0.6364464859870094
+      z_left: -1.02
+      z_right: -0.760316
+    state: []
+  pitch_left: 1.31
+  pitch_right: -0.042635106542868326
+  roll_left: -0.2
+  roll_right: 0.04908282358659542
+  x_left: -0.42
+  x_right: 2.1974776
+  y_left: -0.5399999999999999
+  y_right: -0.08864819
+  yaw_left: -0.6283185307179586
+  yaw_right: 0.6364464859870094
+  z_left: -1.02
+  z_right: -0.760316
+state: []

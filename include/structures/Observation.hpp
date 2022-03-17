@@ -19,15 +19,16 @@ class Observation {
   static Point computeCentroid(const PCL &pcl);
 
  public:
+  typedef std::shared_ptr<::Observation> Ptr;
   /**
    * PUBLIC CONSTRUCTORS AND DESTRUCTOR
    */
 
   Observation();
-  Observation(const PCL::Ptr &pcl, const float &confidence);
-  Observation(const PCL::Ptr &pcl, const Point &centroid, const float &confidence);
-  Observation(const as_msgs::Observation &obs);
-  Observation(const std::list<const Observation *> &observationsToMean);
+  Observation(const PCL::Ptr &pcl, const float &confidence, const size_t &id);
+  Observation(const PCL::Ptr &pcl, const Point &centroid, const float &confidence, const size_t &id);
+  Observation(const as_msgs::Observation &obs, const size_t &id);
+  Observation(const std::list<Observation::Ptr> &observationsToMean);
   ~Observation();
 
   /* PUBLIC ATTRIBUTES */
@@ -35,6 +36,7 @@ class Observation {
   PCL::Ptr pcl;
   Point centroid;
   double confidence;
+  size_t id;
 };
 
 #endif  // OBSERVATION_HPP

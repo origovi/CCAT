@@ -87,7 +87,15 @@ std::ostream &operator<<(std::ostream &os, const Point &p) {
   return os << "Point(" << p.x << ", " << p.y << ", " << p.z << ")\n";
 }
 
+void Point::transform(const Eigen::Affine3d &tf) {
+  Eigen::Vector3d product = tf*Eigen::Vector3d(x, y, z);
+  x = product.x();
+  y = product.y();
+  z = product.z();
+}
+
 /* Getters */
+
 const double &Point::at(const size_t &ind) const {
   switch (ind) {
     case 0:

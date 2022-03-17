@@ -19,8 +19,9 @@ class Cone : public Observation {
   /**
    * PUBLIC ATTRIBUTES
    */
-
+  
   enum Type { None, Blue, Yellow, SmallOrange, BigOrange } type;
+  enum Operation { ADD, DELETE } operation;
 
   /**
    * PUBLIC METHODS

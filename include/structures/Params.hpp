@@ -14,6 +14,7 @@ struct Params {
         std::string observations;
         std::string odometry;
         std::string map;
+        std::string left_bbs, right_bbs;
       } input;
       struct {
       } output;
@@ -23,28 +24,26 @@ struct Params {
     float cluster_dist;
     struct {
       struct {
-        std::string observations;
-        std::string map;
       } input;
       struct {
       } output;
     } topics;
   } preproc;
   struct Matcher {
+    int image_width, image_height;
     struct {
       std::vector<double> translation;
       std::vector<double> euler_angles;
-    } extrinsics_right, extrinsics_left;
-    std::vector<double> intrinsics_right, intrinsics_left;
+    } extrinsics;
+    std::vector<double> intrinsics;
     struct {
       struct {
-        std::string right_detections, left_detections;
       } input;
       struct {
-        std::string projected_right, projected_left;
+        std::string projected;
       } output;
     } topics;
-  } matcher;
+  } matcherL, matcherR;
   struct Tracker {
     bool x;
     struct {

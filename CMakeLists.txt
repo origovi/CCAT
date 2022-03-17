@@ -3,10 +3,14 @@ project(ccat)
 
 add_compile_options(-std=c++14)
 
-find_package(catkin REQUIRED COMPONENTS roscpp std_msgs as_msgs pcl_ros tf tf_conversions eigen_conversions image_transport cv_bridge)
+find_package(catkin REQUIRED COMPONENTS roscpp std_msgs as_msgs pcl_ros tf tf_conversions eigen_conversions image_transport cv_bridge dynamic_reconfigure)
 find_package(Eigen3 REQUIRED)
 
 generate_messages(DEPENDENCIES as_msgs)
+
+generate_dynamic_reconfigure_options(
+  cfg/Extrinsics.cfg
+)
 
 catkin_package(
   INCLUDE_DIRS include
@@ -31,6 +35,7 @@ add_library(${PROJECT_NAME}
   src/structures/Point.cpp
   src/structures/Observation.cpp
   src/structures/Cone.cpp
+  src/utilities/conversions.cpp
 )
 
 add_dependencies(${PROJECT_NAME}_exec as_msgs_generate_messages_cpp)
