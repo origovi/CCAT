@@ -35,7 +35,7 @@ struct Params {
       std::vector<double> translation;
       std::vector<double> euler_angles;
     } extrinsics;
-    std::vector<double> intrinsics;
+    std::vector<float> intrinsics;
     struct {
       struct {
       } input;

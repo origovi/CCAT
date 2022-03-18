@@ -26,7 +26,7 @@
 
 using PCLPoint = pcl::PointXYZI;
 using PCL = pcl::PointCloud<PCLPoint>;
-using Intrinsics = Eigen::Matrix<double, 3, 4>;
+using Intrinsics = Eigen::Matrix3f;
 using Extrinsics = Eigen::Affine3d;
 
 class Matcher {
@@ -63,14 +63,9 @@ class Matcher {
       const std::vector<PCL::Ptr> &pcls, const Eigen::Transform<double, 3, Eigen::Projective> &tf) const;
   void cameraTransformPCLs(const std::vector<PCL::Ptr> &transformedPCL,
                            const Extrinsics &camTf) const;
-  std::vector<PCL::Ptr> reconstructedPCLs(const std::vector<Observation> &observations) const;
-  cv::Point2d projectPoint(const PCLPoint &pointToProject, const Intrinsics &intrinsics) const;
   void projections(const std::vector<PCL::Ptr> &recons, std::list<Projection> &projs) const;
-  void publishImage2(const std::list<Projection> &projections,
+  void publishImage(const std::list<Projection> &projections,
                      const geometry_msgs::PoseArray::ConstPtr &bbs) const;
-  void publishImage(const std::vector<PCL::Ptr> &recons,
-                    const geometry_msgs::PoseArray::ConstPtr &bbs,
-                    const image_transport::Publisher &imPub, const Intrinsics &intrinsics) const;
   void match(const std::list<Projection> &projections, const geometry_msgs::PoseArray::ConstPtr &bbs, std::vector<Cone> &matchings);
 
  public:

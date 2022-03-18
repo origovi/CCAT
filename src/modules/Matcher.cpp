@@ -17,15 +17,6 @@ void Matcher::cameraTransformPCLs(const std::vector<PCL::Ptr> &reconstructions,
   }
 }
 
-std::vector<PCL::Ptr> Matcher::reconstructedPCLs(
-    const std::vector<Observation> &observations) const {
-  std::vector<PCL::Ptr> res(observations.size());
-  for (size_t i = 0; i < observations.size(); i++) {
-    res[i] = observations[i].pcl;
-  }
-  return res;
-}
-
 std::list<Matcher::Projection> Matcher::transformPCLs(
     const std::vector<PCL::Ptr> &pcls,
     const Eigen::Transform<double, 3, Eigen::Projective> &tf) const {
@@ -55,35 +46,40 @@ std::list<Matcher::Projection> Matcher::transformPCLs(
   return res;
 }
 
-cv::Point2d Matcher::projectPoint(const PCLPoint &pointToProject,
-                                  const Intrinsics &intrinsics) const {
-  // Reassign axes: camera frame has different axes (X pointing right, Y down
-  // and Z forward)
-  // Eigen::Vector3d p_corrected(-pointToProject.y, -pointToProject.z, pointToProject.x);
-  // Eigen::Vector3d p_corrected(pointToProject.x, pointToProject.y, pointToProject.z);
-
-  // Eigen::Vector3d coords2D(intrinsics * Eigen::Vector3d(pointToProject.x, pointToProject.y,
-  // pointToProject.z));
-
-  // std::cout << coords2D[0] << " " << coords2D[1] << " " << coords2D[2] << std::endl;
-  // float U = intrinsics.fx * p_corrected.x + intrinsics.cx * p_corrected.z;
-  // float V = intrinsics.fy * p_corrected.y + intrinsics.cy * p_corrected.z;
-  // return cv::Point2d(coords2D[1]/coords2D[2], coords2D[0]/coords2D[2]);
-}
-
 void Matcher::projections(const std::vector<PCL::Ptr> &recons, std::list<Projection> &projs) const {
   Projection proj;
+  //std::cout << '[' << which << "]: Recons Size: " << recons.size() << std::endl;
+
   for (size_t i = 0; i < recons.size(); i++) {
     proj.obsIndex = i;
-    bool hasPointsInImage = false;
-    for (PCL::const_iterator it = recons[i]->begin(); it != recons[i]->end(); it++) {
-      // check if point is in the image
+    bool hasAnyPointInImage = false;
+
+    proj.projPoints.resize(recons[i]->size());
+
+    for (size_t pInd = 0; pInd < recons[i]->size(); pInd++) {
+      
+      // Transform point with camera intrinsics
+      Eigen::Vector3f transformedP(intrinsics_ * recons[i]->operator[](pInd).getVector3fMap());
+      
+      // Convert point to image coordinates (axis must be reassigned)
+      proj.projPoints[pInd].x = transformedP.x() / transformedP.z();
+      proj.projPoints[pInd].y = transformedP.y() / transformedP.z();
+
+      // Check if point is inside the image, if so, this cone will be pushed
+      // into the list containing all projected observations
+      if (proj.projPoints[pInd].x > 0 and
+          proj.projPoints[pInd].x < params_.image_width and
+          proj.projPoints[pInd].y > 0 and
+          proj.projPoints[pInd].y < params_.image_height) {
+        hasAnyPointInImage = true;
+      }
     }
-    if (hasPointsInImage) projs.push_back(proj);
+    if (hasAnyPointInImage) projs.push_back(proj);
   }
+  std::cout << '[' << which << "]: Projs Size: " << projs.size() << std::endl;
 }
 
-void Matcher::publishImage2(const std::list<Projection> &projections,
+void Matcher::publishImage(const std::list<Projection> &projections,
                             const geometry_msgs::PoseArray::ConstPtr &bbs) const {
   cv::Mat image(params_.image_height, params_.image_width, CV_8UC3, cv::Scalar(255, 255, 255));
 
@@ -109,37 +105,6 @@ void Matcher::publishImage2(const std::list<Projection> &projections,
   // The timestamp will be taken from the car location
   sensor_msgs::ImagePtr msg = cv_bridge::CvImage(bbs->header, "bgr8", image).toImageMsg();
   projectedPub_.publish(msg);
-}
-
-void Matcher::publishImage(const std::vector<PCL::Ptr> &recons,
-                           const geometry_msgs::PoseArray::ConstPtr &bbs,
-                           const image_transport::Publisher &imPub,
-                           const Intrinsics &intrinsics) const {
-  cv::Mat image(768, 1024, CV_8UC3, cv::Scalar(255, 255, 255));
-
-  // Paint the bbs
-  for (size_t i = 0; i < bbs->poses.size(); i++) {
-    cv::Point2d pt1(bbs->poses[i].orientation.x, bbs->poses[i].orientation.y);
-    cv::Point2d pt2(bbs->poses[i].orientation.z, bbs->poses[i].orientation.w);
-    if (bbs->poses[i].position.x == 0)
-      cv::rectangle(image, pt1, pt2, cv::Scalar(50, 255, 255), 2, 8, 0);
-    else if (bbs->poses[i].position.x == 1)
-      cv::rectangle(image, pt1, pt2, cv::Scalar(255, 0, 0), 2, 8, 0);
-    else
-      cv::rectangle(image, pt1, pt2, cv::Scalar(0, 145, 255), 2, 8, 0);
-  }
-
-  // Paint the points
-  for (size_t i = 0; i < recons.size(); i++) {
-    for (PCL::const_iterator it = recons[i]->begin(); it != recons[i]->end(); it++) {
-      // if it->z<0
-      if (it->z < 0) cv::circle(image, projectPoint(*it, intrinsics), 3, CV_RGB(255, 0, 0), -1);
-    }
-  }
-
-  // The timestamp will be taken from the car location
-  sensor_msgs::ImagePtr msg = cv_bridge::CvImage(current_header_, "bgr8", image).toImageMsg();
-  imPub.publish(msg);
 }
 
 void Matcher::match(const std::list<Projection> &projections, const geometry_msgs::PoseArray::ConstPtr &bbs, std::vector<Cone> &matchings) {
@@ -177,8 +142,8 @@ Matcher::~Matcher() {}
 void Matcher::cfgCallback(const ccat::ExtrinsicsConfig &config, uint32_t level) {
   ROS_WARN("cfg callback");
   Eigen::Quaterniond rotationQ(Eigen::AngleAxisd(config.roll, Eigen::Vector3d::UnitX()) *
-                                  Eigen::AngleAxisd(config.pitch, Eigen::Vector3d::UnitY()) *
-                                  Eigen::AngleAxisd(config.yaw, Eigen::Vector3d::UnitZ()));
+                               Eigen::AngleAxisd(config.pitch, Eigen::Vector3d::UnitY()) *
+                               Eigen::AngleAxisd(config.yaw, Eigen::Vector3d::UnitZ()));
   extrinsics_.linear() = rotationQ.toRotationMatrix();
   extrinsics_.translation() = Eigen::Vector3d(config.x, config.y, config.z);
 }
@@ -237,11 +202,10 @@ void Matcher::run(const RqdData &data) {
   std::list<Projection> projs;
   projections(pcls, projs);
 
-  publishImage2(projs, data.bbs);
+  publishImage(projs, data.bbs);
 
   // std::list<Projection> recons(transformPCLs(
   //     reconstructedPCLs(observations), intrinsics_left_ * extrinsics_left_ * extrinsics_car_));
-
 
   // match(recons, bbs_, currentCones_);
   // catxopo(reconsL, *nh_);

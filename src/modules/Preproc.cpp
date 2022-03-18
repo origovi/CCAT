@@ -72,7 +72,7 @@ void Preproc::callback(const as_msgs::ObservationArray::ConstPtr &newObservation
                        const nav_msgs::Odometry::ConstPtr &carPos,
                        const geometry_msgs::PoseArray::ConstPtr &leftDetections,
                        const geometry_msgs::PoseArray::ConstPtr &rightDetections) {
-  ROS_WARN("location and bbs callback");
+  ROS_INFO("CALLBACK");
   Eigen::Affine3d carTf;
   tf::poseMsgToEigen(carPos->pose.pose, carTf);
   carTf = carTf.inverse();

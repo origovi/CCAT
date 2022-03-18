@@ -34,8 +34,8 @@ Params::Params(const ros::NodeHandle &nh) {
   nh.param<std::vector<double>>("/AS/P/ccat/extrinsics/left/euler_angles", matcherL.extrinsics.euler_angles, std::vector<double>(3, 0.0));
   nh.param<std::vector<double>>("/AS/P/ccat/extrinsics/right/translation", matcherR.extrinsics.translation, std::vector<double>(3, 0.0));
   nh.param<std::vector<double>>("/AS/P/ccat/extrinsics/right/euler_angles", matcherR.extrinsics.euler_angles, std::vector<double>(3, 0.0));
-  nh.param<std::vector<double>>("/AS/P/ccat/intrinsics/left/camera_matrix", matcherL.intrinsics, std::vector<double>(12, 0.0));
-  nh.param<std::vector<double>>("/AS/P/ccat/intrinsics/right/camera_matrix", matcherR.intrinsics, std::vector<double>(12, 0.0));
+  nh.param<std::vector<float>>("/AS/P/ccat/intrinsics/left/camera_matrix", matcherL.intrinsics, std::vector<float>(9, 0.0));
+  nh.param<std::vector<float>>("/AS/P/ccat/intrinsics/right/camera_matrix", matcherR.intrinsics, std::vector<float>(9, 0.0));
   
   /* Tracker */
   //nh.param<float>("ccat/preproc/clusterDist", tracker.clusterDist, 0.5);

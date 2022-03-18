@@ -14,12 +14,13 @@
 #include "modules/Tracker.hpp"
 
 int main(int argc, char **argv) {
-  ros::init(argc, argv, "/AS/P/ccat");
-  ros::NodeHandle *const nh(new ros::NodeHandle);
+  ros::init(argc, argv, "ccat");
+  ros::NodeHandle *const nh(new ros::NodeHandle("ccat"));
 
   Params params(*nh);
 
   /* Object instances */
+
   Preproc &preproc = Preproc::getInstance();
   preproc.init(nh, params.preproc);
   Matcher matcherL(params.matcherL, nh, Matcher::LEFT);
@@ -28,13 +29,16 @@ int main(int argc, char **argv) {
   Tracker &tracker = Tracker::getInstance();
   tracker.init(nh, params.tracker);
 
-  /* Dynamic Reconfigure */
-  dynamic_reconfigure::Server<ccat::ExtrinsicsConfig> extrinsics_left, extrinsics_right;
-  //dynamic_reconfigure::Server<ccat::ExtrinsicsConfig>::CallbackType dyn;
-  extrinsics_left.setCallback(boost::bind(&Matcher::cfgCallback, &matcherL, _1, _2));
-  extrinsics_right.setCallback(boost::bind(&Matcher::cfgCallback, &matcherR, _1, _2));
+  /* Dynamic Reconfigure of camera extrinsics*/
+
+  // We need to declare two NHs because there must be only one dyn_rec::Server per NH
+  ros::NodeHandle nh_cfg_left(*nh, "cfg_left_cam"), nh_cfg_right(*nh, "cfg_right_cam");
+  dynamic_reconfigure::Server<ccat::ExtrinsicsConfig> cfgServer_extrinsics_left(nh_cfg_left), cfgServer_extrinsics_right(nh_cfg_right);
+  cfgServer_extrinsics_left.setCallback(boost::bind(&Matcher::cfgCallback, &matcherL, _1, _2));
+  cfgServer_extrinsics_right.setCallback(boost::bind(&Matcher::cfgCallback, &matcherR, _1, _2));
 
   /* Subscribers */
+
   message_filters::Subscriber<as_msgs::ObservationArray> obsSub(*nh, params.common.topics.input.observations, 100);
   message_filters::Subscriber<nav_msgs::Odometry> state_carSub(*nh, params.common.topics.input.odometry, 100);
   message_filters::Subscriber<geometry_msgs::PoseArray> left_bbSub(*nh, params.common.topics.input.left_bbs, 100);
