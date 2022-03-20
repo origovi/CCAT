@@ -18,8 +18,8 @@
 
 #include <cmath>
 #include <iostream>
-#include <vector>
 #include <set>
+#include <vector>
 
 #include "structures/Cone.hpp"
 #include "structures/KDTree.hpp"
@@ -44,10 +44,19 @@ class Matcher {
   };
 
   struct Match {
-    size_t bbInd = -1;
-    double score;
-    explicit operator bool() const { return bbInd >= 0; };
-    void unmatch() { bbInd = -1; };
+   private:
+    bool valid_ = false;
+    size_t bbInd_;
+    double dist_;
+   public:
+    explicit operator bool() const { return valid_; }
+    void match(size_t bbInd, double dist) {
+      valid_ = true;
+      bbInd_ = bbInd;
+    }
+    void unmatch() { valid_ = false; }
+    const size_t &bbInd() const { return bbInd_; }
+    const double &dist() const { return dist_; }
   };
 
   /**
@@ -80,7 +89,7 @@ class Matcher {
                     const geometry_msgs::PoseArray::ConstPtr &bbs) const;
   inline double bbHeightFromDist(const double &dist) const;
   static Point bbCentroidAndHeight(const geometry_msgs::Pose &bb);
-  void match(const size_t &bbInd, const geometry_msgs::PoseArray &bbs, const KDTree &projsKDT, const std::vector<Projection> &projections, std::vector<Match> &matches, std::vector<std::set<size_t>> &projsToExclude) const;
+  void match(const size_t &bbInd, const geometry_msgs::PoseArray &bbs, const KDTree &projsKDT, std::vector<Match> &matches, std::vector<std::set<size_t>> &projsToExclude) const;
   void computeMatches(const std::vector<Projection> &projections, const geometry_msgs::PoseArray &bbs);
 
  public:

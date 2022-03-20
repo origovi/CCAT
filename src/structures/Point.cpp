@@ -98,6 +98,14 @@ Eigen::Vector3f Point::vec3f() const {
   return Eigen::Vector3f(float(x), float(y), float(z));
 }
 
+geometry_msgs::Point Point::gmPoint() const {
+  geometry_msgs::Point res;
+  res.x = x;
+  res.y = y;
+  res.z = z;
+  return res;
+}
+
 /* Getters */
 
 const double &Point::at(const size_t &ind) const {

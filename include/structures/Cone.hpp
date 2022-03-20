@@ -6,28 +6,31 @@
 #include "as_msgs/BB2.h"
 #include "structures/Observation.hpp"
 
-class Cone : public Observation {
+class Cone {
  public:
   /**
    * CONSTRUCTORS AND DESTRUCTOR
    */
 
   Cone();
-  Cone(const Observation &observation);
+  Cone(const Observation::Ptr &_observation, const double &_matchingScore);
   ~Cone();
 
   /**
    * PUBLIC ATTRIBUTES
    */
   
-  enum Type { None, Blue, Yellow, SmallOrange, BigOrange } type;
+  enum Type { Yellow, Blue, SmallOrange, BigOrange, None } type;
   enum Operation { ADD, DELETE } operation;
+  Observation::Ptr observation;
+  double matchingDist;
 
   /**
    * PUBLIC METHODS
    */
 
   void setTypeFromAsMsgs(const uint8_t &type);
+  uint8_t typeToAsMsgs() const;
 };
 
 #endif  // CONE_HPP

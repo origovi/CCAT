@@ -248,7 +248,7 @@ KDTData<size_t> KDTree::nearest_index(const Point &pt, const std::set<size_t> &e
 
 pointIndexV KDTree::nearest_pointIndex(const Point &pt, const std::set<size_t> &excs) const {
   KDNodePtr Nearest = nearest_(pt, excs);
-  return (bool(*Nearest)) ? pointIndexV() : pointIndexV(pointIndex(*Nearest->x, *Nearest->index));
+  return (bool(*Nearest)) ? pointIndexV(pointIndex(*Nearest->x, *Nearest->index)) : pointIndexV();
 }
 
 pointIndexArr KDTree::neighborhood_(  //

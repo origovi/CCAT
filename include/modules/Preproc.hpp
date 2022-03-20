@@ -61,6 +61,8 @@ class Preproc {
 
   void init(ros::NodeHandle *const &nh, const Params::Preproc &params);
 
+  void reset();
+  
   /* Callbacks */
 
   void callback(const as_msgs::ObservationArray::ConstPtr &newObservations, const nav_msgs::Odometry::ConstPtr &carPos,

@@ -20,3 +20,14 @@ void cvrs::obs2PCLs(const std::vector<Observation::Ptr> &observations, std::vect
     res[i] = pcl::make_shared<PCL>(*(observations[i]->pcl));
   }
 }
+
+void cvrs::coneVec2As_ConeArray(const std::vector<Cone> &cones, as_msgs::ConeArray &res) {
+  res.cones.resize(cones.size());
+  as_msgs::Cone cone;
+  for (size_t i = 0; i < cones.size(); i++) {
+    cone.id = cones[i].observation->id;
+    cone.position_base_link = cones[i].observation->centroid.gmPoint();
+    cone.type = cones[i].typeToAsMsgs();
+    res.cones[i] = cone;
+  }
+}

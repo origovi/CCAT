@@ -1,5 +1,5 @@
 <launch>
-  <node name="ccat" pkg="ccat" type="ccat_exec" output="screen" ns="/AS/P">
+  <node name="ccat" pkg="ccat" type="ccat_exec" output="screen" ns="/AS/P" launch-prefix="gdb -ex run --args" >
     <rosparam command="load" file="$(find ccat)/config/ccat.yml" />
     <rosparam command="load" file="$(find ccat)/config/calibration/extrinsics_left.yml" ns="extrinsics/left" />
     <rosparam command="load" file="$(find ccat)/config/calibration/extrinsics_right.yml" ns="extrinsics/right" />
@@ -7,3 +7,6 @@
     <rosparam command="load" file="$(find ccat)/config/calibration/intrinsics_right.yml" ns="intrinsics/right" />
   </node>
 </launch>
+
+<!-- launch-prefix="gdb -ex run -args" -->
+<!--                            ^ aqui van dos -->

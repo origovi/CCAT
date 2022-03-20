@@ -31,6 +31,7 @@ add_library(${PROJECT_NAME}
   src/structures/Params.cpp
   src/modules/Preproc.cpp
   src/modules/Matcher.cpp
+  src/modules/Merger.cpp
   src/modules/Tracker.cpp
   src/structures/Point.cpp
   src/structures/Observation.cpp

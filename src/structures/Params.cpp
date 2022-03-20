@@ -11,6 +11,7 @@ Params::Params(const ros::NodeHandle &nh) {
   nh.param<std::string>("/AS/P/ccat/common/topics/input/map", common.topics.input.map, "/map/accumulated");
   nh.param<std::string>("/AS/P/ccat/common/topics/input/left_detections", common.topics.input.left_bbs, "/camera/left/detections");
   nh.param<std::string>("/AS/P/ccat/common/topics/input/right_detections", common.topics.input.right_bbs, "/camera/right/detections");
+  nh.param<std::string>("/AS/P/ccat/common/topics/output/cones", common.topics.output.cones, "/AS/P/ccat/cones");
 
   /**
    * PREPROC
@@ -23,9 +24,10 @@ Params::Params(const ros::NodeHandle &nh) {
    */
 
   // Common Part
+  nh.param<bool>("/AS/P/ccat/matcher/common/debug", matcherL.debug, false);
+  nh.param<double>("/AS/P/ccat/matcher/common/max_match_dist", matcherL.max_match_dist, 100.0);
   nh.param<int>("/AS/P/ccat/matcher/common/image_width", matcherL.image_width, 1024);
   nh.param<int>("/AS/P/ccat/matcher/common/image_height", matcherL.image_height, 768);
-  nh.param<bool>("/AS/P/ccat/matcher/common/debug", matcherL.debug, false);
   matcherR = matcherL;
 
   // Different Part
@@ -41,6 +43,8 @@ Params::Params(const ros::NodeHandle &nh) {
   nh.param<std::vector<float>>("/AS/P/ccat/intrinsics/right/camera_matrix", matcherR.intrinsics, std::vector<float>(9, 0.0));
   
   /* Tracker */
-  //nh.param<float>("ccat/preproc/clusterDist", tracker.clusterDist, 0.5);
+  nh.param<bool>("/AS/P/ccat/tracker/debug", tracker.debug, false);
+  nh.param<std::string>("/AS/P/ccat/tracker/topics/output/markers_base_link", tracker.topics.output.markersBaseLink, "/AS/P/ccat/markers/base_link");
+  nh.param<std::string>("/AS/P/ccat/tracker/topics/output/markers_global", tracker.topics.output.markersGlobal, "/AS/P/ccat/markers/global");
 
 }

@@ -96,50 +96,54 @@ double Matcher::bbHeightFromDist(const double &dist) const {
 }
 
 Point Matcher::bbCentroidAndHeight(const geometry_msgs::Pose &bb) {
-  return Point();
+  return Point((bb.position.x + bb.position.z) / 2, (bb.position.y + bb.orientation.w) / 2, abs(bb.position.y - bb.orientation.w));
 }
 
-void Matcher::match(const size_t &bbInd, const geometry_msgs::PoseArray &bbs, const KDTree &projsKDT, const std::vector<Projection> &projections, std::vector<Match> &matches, std::vector<std::set<size_t>> &projsToExclude) const {
+void Matcher::match(const size_t &bbInd, const geometry_msgs::PoseArray &bbs, const KDTree &projsKDT, std::vector<Match> &matches, std::vector<std::set<size_t>> &projsToExclude) const {
   Point bbCentroidAndHeightP(bbCentroidAndHeight(bbs.poses[bbInd]));
   bool isFirst = true;
   pointIndexV projPointInd;
-  double score;
-  while (isFirst or score >= matches[projPointInd->second].score) {
-    projPointInd = projsKDT.nearest_pointIndex(bbCentroidAndHeightP, projsToExclude[bbInd]);
+  projPointInd = projsKDT.nearest_pointIndex(bbCentroidAndHeightP, projsToExclude[bbInd]);
+  double dist = Point::dist(bbCentroidAndHeightP, projPointInd->first);
 
-    if (!bool(projPointInd)) {
+  while (ros::ok() and (isFirst or dist >= matches[projPointInd->second].dist())) {
+    // No matching is possible
+    if (!bool(projPointInd) /* or dist > params_.max_match_dist */) {
       return;
     }
-    double score = Point::dist(bbCentroidAndHeightP, projPointInd->first);
 
     // The found Projection has not any match yet
     if (!matches[projPointInd->second]) {
-      matches[projPointInd->second].bbInd = bbInd;
-      matches[projPointInd->second].score = score;
+      matches[projPointInd->second].match(bbInd, dist);
+      return;
     }
+
     // The found Projection with this BB is a better match than the one before
-    else if (score < matches[projPointInd->second].score) {
-      projsToExclude[matches[projPointInd->second].bbInd].insert(projPointInd->second);
-      match(matches[projPointInd->second].bbInd, bbs, projsKDT, projections, matches, projsToExclude);
-      
+    else if (dist < matches[projPointInd->second].dist()) {
+      projsToExclude[matches[projPointInd->second].bbInd()].insert(projPointInd->second);
+      size_t bbIndToRematch = matches[projPointInd->second].bbInd();
+      matches[projPointInd->second].unmatch();
+
+      match(bbIndToRematch, bbs, projsKDT, matches, projsToExclude);
+
       // Update the new match AFTER the reassignment(s)
-      matches[projPointInd->second].bbInd = bbInd;
-      matches[projPointInd->second].score = score;
+      matches[projPointInd->second].match(bbInd, dist);
+      return;
     }
     // The found Projection is worse, we search another time
     // adding the found Projection to the exclude set
     else {
       projsToExclude[bbInd].insert(projPointInd->second);
+      projPointInd = projsKDT.nearest_pointIndex(bbCentroidAndHeightP, projsToExclude[bbInd]);
+      dist = Point::dist(bbCentroidAndHeightP, projPointInd->first);
     }
     isFirst = false;
   }
-
 }
 
 void Matcher::computeMatches(const std::vector<Projection> &projections, const geometry_msgs::PoseArray &bbs) {
   std::vector<Match> matches(projections.size());
   std::vector<std::set<size_t>> projsToExclude(bbs.poses.size());
-
   // Each Point will have X and Y (image coordinates) and the Z will be the
   // height (in pixels) that the BB of the cone would have.
   std::vector<Point> pointsToBuildTheKDTree;
@@ -148,18 +152,29 @@ void Matcher::computeMatches(const std::vector<Projection> &projections, const g
     pointsToBuildTheKDTree.emplace_back(proj.imageCentroid.x, proj.imageCentroid.y, bbHeightFromDist(Point::dist(proj.observation->centroid)));
   }
   KDTree projsKDT(pointsToBuildTheKDTree);
-  for (size_t bbInd = 0; bbInd < matches.size(); bbInd++) {
-    if (!matches[bbInd]) match(bbInd, bbs, projsKDT, projections, matches, projsToExclude);
+  ROS_WARN("control2");
+  for (size_t bbInd = 0; bbInd < bbs.poses.size(); bbInd++) {
+    match(bbInd, bbs, projsKDT, matches, projsToExclude);
   }
 
-  // Create the cones
+  ROS_WARN("control");
+
+  // Create the cones:
+  // 1. Every SLAM-seen Observation will have the equivalent Cone
+  // 2. The Cone will have the type of the BB that it's matched to
+  // 3. TODO: if any Observation is very close and does not have a match,
+  //    delete it
   //currentCones_.clear();
-  currentCones_.resize(bbs.poses.size());
-  for (size_t matchInd = 0; matchInd < matches.size(); matchInd++) {
-    if (matches[matchInd]) {
-      currentCones_[matchInd] = Cone(*projections[matchInd].observation);
+  currentCones_.resize(projections.size());
+  size_t matches_num = 0;
+  for (size_t projInd = 0; projInd < matches.size(); projInd++) {
+    currentCones_[projInd] = Cone(projections[projInd].observation, matches[projInd].dist());
+    if (bool(matches[projInd])) {
+      matches_num++;
+      currentCones_[projInd].setTypeFromAsMsgs(bbs.poses[matches[projInd].bbInd()].position.x);
     }
   }
+  std::cout << '[' << which << "]: Matchings Size: " << matches_num << std::endl;
 }
 
 /**

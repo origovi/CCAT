@@ -7,6 +7,17 @@
 #include <vector>
 
 struct Params {
+
+  /**
+   * CONSTRUCTOR
+   */
+
+  Params(const ros::NodeHandle &nh);
+  
+  /**
+   * COMMON
+   */
+  
   struct Common {
     int frequency;
     struct {
@@ -17,9 +28,15 @@ struct Params {
         std::string left_bbs, right_bbs;
       } input;
       struct {
+        std::string cones;
       } output;
     } topics;
   } common;
+
+  /**
+   * PREPROC
+   */
+
   struct Preproc {
     float cluster_dist;
     struct {
@@ -29,8 +46,14 @@ struct Params {
       } output;
     } topics;
   } preproc;
+
+  /**
+   * MATCHER
+   */
+
   struct Matcher {
     bool debug;
+    double max_match_dist;
     int image_width, image_height;
     float cone_height, cone_width;
     struct {
@@ -47,16 +70,29 @@ struct Params {
       } output;
     } topics;
   } matcherL, matcherR;
+
+  /**
+   * MERGER
+   */
+
+  struct Merger {
+
+  } merger;
+
+  /**
+   * TRACKER
+   */
+
   struct Tracker {
-    bool x;
+    bool debug;
     struct {
       struct {
       } input;
       struct {
+        std::string markersBaseLink, markersGlobal;
       } output;
     } topics;
   } tracker;
-  Params(const ros::NodeHandle &nh);
 };
 
 #endif

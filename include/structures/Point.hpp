@@ -68,6 +68,7 @@ class Point {
 
   void transform(const Eigen::Affine3d &tf);
   Eigen::Vector3f vec3f() const;
+  geometry_msgs::Point gmPoint() const;
 
   
   /* Getters */
