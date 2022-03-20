@@ -10,57 +10,21 @@ void Matcher::copyPCLPtrVec(const std::vector<PCL::Ptr> &input, std::vector<PCL:
   }
 }
 
-void Matcher::cameraTransformPCLs(const std::vector<PCL::Ptr> &reconstructions,
-                                  const Extrinsics &camTf) const {
-  for (size_t i = 0; i < reconstructions.size(); i++) {
-    pcl::transformPointCloud(*reconstructions[i], *reconstructions[i], camTf);
-  }
-}
-
-std::list<Matcher::Projection> Matcher::transformPCLs(
-    const std::vector<PCL::Ptr> &pcls,
-    const Eigen::Transform<double, 3, Eigen::Projective> &tf) const {
-  std::list<Projection> res;
-  Projection proj;
-  PCL temp_pcl;
-  for (size_t obsIndex = 0; obsIndex < pcls.size(); obsIndex++) {
-    proj.obsIndex = obsIndex;
-    bool hasAnyPointInImage = false;
-    pcl::transformPointCloud(*pcls[obsIndex], temp_pcl, tf.matrix());
-    proj.projPoints.clear();
-    proj.projPoints.reserve(temp_pcl.size());
-    for (size_t pIndex = 0; pIndex < temp_pcl.size(); pIndex++) {
-      cv::Point2d imagePoint(temp_pcl[pIndex].y / temp_pcl[pIndex].z,
-                             temp_pcl[pIndex].x / temp_pcl[pIndex].z);
-      //std::cout << imagePoint.x << " " << imagePoint.y << std::endl;
-      proj.projPoints.push_back(imagePoint);
-      if (imagePoint.x > 0 and imagePoint.x < params_.image_width and imagePoint.y > 0 and
-          imagePoint.y < params_.image_height) {
-        hasAnyPointInImage = true;
-      }
-    }
-    if (hasAnyPointInImage) {
-      res.push_back(proj);
-    }
-  }
-  return res;
-}
-
-void Matcher::projections(const std::vector<PCL::Ptr> &recons, std::list<Projection> &projs) const {
+void Matcher::projections(const std::vector<PCL::Ptr> &recons, const std::vector<Observation::Ptr> &observations, std::vector<Projection> &projs) const {
+  projs.reserve(recons.size());
   Projection proj;
   //std::cout << '[' << which << "]: Recons Size: " << recons.size() << std::endl;
 
   for (size_t i = 0; i < recons.size(); i++) {
-    proj.obsIndex = i;
+    proj.observation = observations[i];
     bool hasAnyPointInImage = false;
 
     proj.projPoints.resize(recons[i]->size());
 
     for (size_t pInd = 0; pInd < recons[i]->size(); pInd++) {
-      
       // Transform point with camera intrinsics
       Eigen::Vector3f transformedP(intrinsics_ * recons[i]->operator[](pInd).getVector3fMap());
-      
+
       // Convert point to image coordinates (axis must be reassigned)
       proj.projPoints[pInd].x = transformedP.x() / transformedP.z();
       proj.projPoints[pInd].y = transformedP.y() / transformedP.z();
@@ -74,13 +38,32 @@ void Matcher::projections(const std::vector<PCL::Ptr> &recons, std::list<Project
         hasAnyPointInImage = true;
       }
     }
-    if (hasAnyPointInImage) projs.push_back(proj);
+    if (hasAnyPointInImage) {
+      // 1. Transform the centroid of the pcl to image coords
+      // 2. Push the projection to the result
+      Eigen::Vector3f imageCentroidVec(intrinsics_ * observations[i]->centroid.vec3f());
+      proj.imageCentroid.x = imageCentroidVec.x() / imageCentroidVec.z();
+      proj.imageCentroid.y = imageCentroidVec.y() / imageCentroidVec.z();
+      projs.push_back(proj);
+    }
   }
   std::cout << '[' << which << "]: Projs Size: " << projs.size() << std::endl;
 }
 
-void Matcher::publishImage(const std::list<Projection> &projections,
-                            const geometry_msgs::PoseArray::ConstPtr &bbs) const {
+void Matcher::publishPCLs(const std::vector<PCL::Ptr> &pcls) const {
+  PCL pclToPaint;
+  for (auto &pcl : pcls) {
+    pclToPaint += *pcl;
+  }
+  sensor_msgs::PointCloud2 pcl;
+  pcl::toROSMsg(pclToPaint, pcl);
+  pcl.header.frame_id = "map";
+  pcl.header.stamp = ros::Time::now();
+  pclPub_.publish(pcl);
+}
+
+void Matcher::publishImage(const std::vector<Projection> &projections,
+                           const geometry_msgs::PoseArray::ConstPtr &bbs) const {
   cv::Mat image(params_.image_height, params_.image_width, CV_8UC3, cv::Scalar(255, 255, 255));
 
   // Paint the bbs
@@ -102,13 +85,81 @@ void Matcher::publishImage(const std::list<Projection> &projections,
     }
   }
 
-  // The timestamp will be taken from the car location
+  // The timestamp will be taken from the bbs message header
   sensor_msgs::ImagePtr msg = cv_bridge::CvImage(bbs->header, "bgr8", image).toImageMsg();
   projectedPub_.publish(msg);
 }
 
-void Matcher::match(const std::list<Projection> &projections, const geometry_msgs::PoseArray::ConstPtr &bbs, std::vector<Cone> &matchings) {
-  matchings.clear();
+double Matcher::bbHeightFromDist(const double &dist) const {
+  Eigen::Vector3f aux = intrinsics_ * Eigen::Vector3f(0.0, params_.cone_height, dist);
+  return double(aux.y() / aux.z());
+}
+
+Point Matcher::bbCentroidAndHeight(const geometry_msgs::Pose &bb) {
+  return Point();
+}
+
+void Matcher::match(const size_t &bbInd, const geometry_msgs::PoseArray &bbs, const KDTree &projsKDT, const std::vector<Projection> &projections, std::vector<Match> &matches, std::vector<std::set<size_t>> &projsToExclude) const {
+  Point bbCentroidAndHeightP(bbCentroidAndHeight(bbs.poses[bbInd]));
+  bool isFirst = true;
+  pointIndexV projPointInd;
+  double score;
+  while (isFirst or score >= matches[projPointInd->second].score) {
+    projPointInd = projsKDT.nearest_pointIndex(bbCentroidAndHeightP, projsToExclude[bbInd]);
+
+    if (!bool(projPointInd)) {
+      return;
+    }
+    double score = Point::dist(bbCentroidAndHeightP, projPointInd->first);
+
+    // The found Projection has not any match yet
+    if (!matches[projPointInd->second]) {
+      matches[projPointInd->second].bbInd = bbInd;
+      matches[projPointInd->second].score = score;
+    }
+    // The found Projection with this BB is a better match than the one before
+    else if (score < matches[projPointInd->second].score) {
+      projsToExclude[matches[projPointInd->second].bbInd].insert(projPointInd->second);
+      match(matches[projPointInd->second].bbInd, bbs, projsKDT, projections, matches, projsToExclude);
+      
+      // Update the new match AFTER the reassignment(s)
+      matches[projPointInd->second].bbInd = bbInd;
+      matches[projPointInd->second].score = score;
+    }
+    // The found Projection is worse, we search another time
+    // adding the found Projection to the exclude set
+    else {
+      projsToExclude[bbInd].insert(projPointInd->second);
+    }
+    isFirst = false;
+  }
+
+}
+
+void Matcher::computeMatches(const std::vector<Projection> &projections, const geometry_msgs::PoseArray &bbs) {
+  std::vector<Match> matches(projections.size());
+  std::vector<std::set<size_t>> projsToExclude(bbs.poses.size());
+
+  // Each Point will have X and Y (image coordinates) and the Z will be the
+  // height (in pixels) that the BB of the cone would have.
+  std::vector<Point> pointsToBuildTheKDTree;
+  pointsToBuildTheKDTree.reserve(projections.size());
+  for (const Projection &proj : projections) {
+    pointsToBuildTheKDTree.emplace_back(proj.imageCentroid.x, proj.imageCentroid.y, bbHeightFromDist(Point::dist(proj.observation->centroid)));
+  }
+  KDTree projsKDT(pointsToBuildTheKDTree);
+  for (size_t bbInd = 0; bbInd < matches.size(); bbInd++) {
+    if (!matches[bbInd]) match(bbInd, bbs, projsKDT, projections, matches, projsToExclude);
+  }
+
+  // Create the cones
+  //currentCones_.clear();
+  currentCones_.resize(bbs.poses.size());
+  for (size_t matchInd = 0; matchInd < matches.size(); matchInd++) {
+    if (matches[matchInd]) {
+      currentCones_[matchInd] = Cone(*projections[matchInd].observation);
+    }
+  }
 }
 
 /**
@@ -127,8 +178,9 @@ Matcher::Matcher(const Params::Matcher &params, ros::NodeHandle *const &nh, cons
   extrinsics_.translation() = Eigen::Vector3d(params_.extrinsics.translation.data());
 
   // Publishers declaration
-  image_transport::ImageTransport image_transport(*nh);
-  projectedPub_ = image_transport.advertise(params_.topics.output.projected, 1);
+  image_transport::ImageTransport image_transport(*nh_);
+  if (params_.debug) projectedPub_ = image_transport.advertise(params_.topics.output.projected, 1);
+  if (params_.debug) pclPub_ = nh_->advertise<sensor_msgs::PointCloud2>(params_.topics.output.pcl, 1);
 }
 
 Matcher::~Matcher() {}
@@ -146,32 +198,6 @@ void Matcher::cfgCallback(const ccat::ExtrinsicsConfig &config, uint32_t level) 
                                Eigen::AngleAxisd(config.yaw, Eigen::Vector3d::UnitZ()));
   extrinsics_.linear() = rotationQ.toRotationMatrix();
   extrinsics_.translation() = Eigen::Vector3d(config.x, config.y, config.z);
-}
-
-void catxopo(const std::vector<PCL::Ptr> &recons, ros::NodeHandle &nh) {
-  static ros::Publisher pub = nh.advertise<sensor_msgs::PointCloud2>("locoL", 1);
-  PCL p;
-  for (auto &nose : recons) {
-    p += *nose;
-  }
-  sensor_msgs::PointCloud2 pcl;
-  pcl::toROSMsg(p, pcl);
-  pcl.header.frame_id = "map";
-  pcl.header.stamp = ros::Time::now();
-  pub.publish(pcl);
-}
-
-void catxopo2(const std::vector<PCL::Ptr> &recons, ros::NodeHandle &nh) {
-  static ros::Publisher pub = nh.advertise<sensor_msgs::PointCloud2>("locoR", 1);
-  PCL p;
-  for (auto &nose : recons) {
-    p += *nose;
-  }
-  sensor_msgs::PointCloud2 pcl;
-  pcl::toROSMsg(p, pcl);
-  pcl.header.frame_id = "map";
-  pcl.header.stamp = ros::Time::now();
-  pub.publish(pcl);
 }
 
 /* Functions */
@@ -195,26 +221,21 @@ void Matcher::run(const RqdData &data) {
     zFilter.setInputCloud(pcl);
     zFilter.filter(*pcl);
   }
-  //std::cout << '[' << which << "]: " << "hola4" << std::endl;
 
-  (which == Which::LEFT) ? catxopo(pcls, *nh_) : catxopo2(pcls, *nh_);
+  // If debug, publish all the cones in camera coordinates
+  if (params_.debug) publishPCLs(pcls);
 
-  std::list<Projection> projs;
-  projections(pcls, projs);
+  // Create the projections of the points, that is:
+  // 1. Transform all the points to image space
+  // 2. Save only the observations which have at least one point on the image
+  std::vector<Projection> projs;
+  projections(pcls, data.observations, projs);
 
-  publishImage(projs, data.bbs);
+  // If debug, publish the images showing the projections (aka calibration)
+  if (params_.debug) publishImage(projs, data.bbs);
 
-  // std::list<Projection> recons(transformPCLs(
-  //     reconstructedPCLs(observations), intrinsics_left_ * extrinsics_left_ * extrinsics_car_));
-
-  // match(recons, bbs_, currentCones_);
-  // catxopo(reconsL, *nh_);
-  // catxopo2(reconsR, *nh_);
-
-  // std::vector<std::pair<>> publishImage(reconsL, leftBbs_, leftProjectedPub_, intrinsics_left_);
-  // publishImage(reconsR, rightBbs_, rightProjectedPub_, intrinsics_right_);
-
-  // match()
+  // Now obtain the matches
+  computeMatches(projs, *data.bbs);
 }
 
 /* Getters */

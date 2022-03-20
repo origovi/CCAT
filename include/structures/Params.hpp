@@ -30,7 +30,9 @@ struct Params {
     } topics;
   } preproc;
   struct Matcher {
+    bool debug;
     int image_width, image_height;
+    float cone_height, cone_width;
     struct {
       std::vector<double> translation;
       std::vector<double> euler_angles;
@@ -41,6 +43,7 @@ struct Params {
       } input;
       struct {
         std::string projected;
+        std::string pcl;
       } output;
     } topics;
   } matcherL, matcherR;

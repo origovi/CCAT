@@ -94,6 +94,10 @@ void Point::transform(const Eigen::Affine3d &tf) {
   z = product.z();
 }
 
+Eigen::Vector3f Point::vec3f() const {
+  return Eigen::Vector3f(float(x), float(y), float(z));
+}
+
 /* Getters */
 
 const double &Point::at(const size_t &ind) const {

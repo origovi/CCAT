@@ -17,25 +17,45 @@
 #pragma once
 
 #include <algorithm>
-#include <functional>
-#include <memory>
-#include <vector>
-#include <list>
 #include <cmath>
+#include <functional>
 #include <iterator>
 #include <limits>
+#include <list>
+#include <memory>
+#include <set>
+#include <vector>
 
 #include "structures/Point.hpp"
 
 using indexArr = std::vector<size_t>;
 using pointIndex = typename std::pair<Point, size_t>;
-#endif
+
+template <class T>
+class KDTData {
+ private:
+  bool valid;
+  T value;
+
+ public:
+  KDTData() : valid(false) {}
+  KDTData(const T &_value) : value(_value), valid(true) {}
+  KDTData &operator=(const T &_value) {
+    valid = true;
+    value = _value;
+    return *this;
+  }
+  explicit operator bool() { return valid; }
+  T &operator*() { return value; }
+  T *operator->() { return &value; }
+};
+using pointIndexV = typename KDTData<pointIndex>::KDTData;
 
 class KDNode {
  public:
   using KDNodePtr = std::shared_ptr<KDNode>;
-  size_t index;
-  Point x;
+  KDTData<size_t> index;
+  KDTData<Point> x;
   KDNodePtr left;
   KDNodePtr right;
 
@@ -107,16 +127,16 @@ class KDTree {
       const Point &pt,          //
       const size_t &level,      //
       const KDNodePtr &best,    //
-      const double &best_dist   //
-  );
+      const double &best_dist,  //
+      const std::set<size_t> &excs) const;
 
   // default caller
-  KDNodePtr nearest_(const Point &pt);
+  KDNodePtr nearest_(const Point &pt, const std::set<size_t> &excs) const;
 
  public:
-  Point nearest_point(const Point &pt);
-  size_t nearest_index(const Point &pt);
-  pointIndex nearest_pointIndex(const Point &pt);
+  KDTData<Point> nearest_point(const Point &pt, const std::set<size_t> &excs = std::set<size_t>()) const;
+  KDTData<size_t> nearest_index(const Point &pt, const std::set<size_t> &excs = std::set<size_t>()) const;
+  pointIndexV nearest_pointIndex(const Point &pt, const std::set<size_t> &excs = std::set<size_t>()) const;
 
  private:
   pointIndexArr neighborhood_(  //
@@ -133,9 +153,11 @@ class KDTree {
 
   pointVec neighborhood_points(  //
       const Point &pt,           //
-      const double &rad);
+      const double &rad) const;
 
   indexArr neighborhood_indices(  //
       const Point &pt,            //
       const double &rad) const;
 };
+
+#endif  // KDTREE_HPP

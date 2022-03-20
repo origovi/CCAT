@@ -13,15 +13,20 @@ preproc:
 
 matcher:
   common:
-    image_width:               1024
-    image_height:              768
+    debug:                    true
+    image_width:              1024
+    image_height:             768
+    cone_height:              0.325
+    cone_width:               0.228
   topics:
     input:
       left_detections:        "/camera/left/detections"
       right_detections:       "/camera/right/detections"
     output:
-      left_projected:         "/AS/P/ccat/left_projected"
-      right_projected:        "/AS/P/ccat/right_projected"
+      left_projected:         "/AS/P/ccat/projected/left"
+      right_projected:        "/AS/P/ccat/projected/right"
+      left_pcl:               "/AS/P/ccat/pcl/left"
+      right_pcl:              "/AS/P/ccat/pcl/right"
 
 tracker:
   clusterDist:                0.5                   # float: if the distance between two cones is less, they will be clustered

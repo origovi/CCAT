@@ -56,13 +56,19 @@ class Point {
   template<typename T>
   Point &operator/=(const T &num);
 
-  static inline double distSq(const Point &p1, const Point &p2) {
+  static inline double distSq(const Point &p1, const Point &p2 = Point()) {
     return pow(p1.x - p2.x, 2) + pow(p1.y - p2.y, 2) + pow(p1.z - p2.z, 2);
+  }
+
+  static inline double dist(const Point &p1, const Point &p2 = Point()) {
+    return sqrt(pow(p1.x - p2.x, 2) + pow(p1.y - p2.y, 2) + pow(p1.z - p2.z, 2));
   }
 
   friend std::ostream &operator<<(std::ostream &os, const Point &p);
 
   void transform(const Eigen::Affine3d &tf);
+  Eigen::Vector3f vec3f() const;
+
   
   /* Getters */
   const double &at(const size_t &ind) const;

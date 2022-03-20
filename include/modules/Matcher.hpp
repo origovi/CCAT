@@ -16,10 +16,13 @@
 #include <tf/tf.h>
 #include <tf_conversions/tf_eigen.h>
 
+#include <cmath>
 #include <iostream>
 #include <vector>
+#include <set>
 
 #include "structures/Cone.hpp"
+#include "structures/KDTree.hpp"
 #include "structures/Observation.hpp"
 #include "structures/Params.hpp"
 #include "utilities/conversions.hpp"
@@ -31,9 +34,20 @@ using Extrinsics = Eigen::Affine3d;
 
 class Matcher {
  private:
+  /**
+  * PRIVATE STRUCTURES
+  */
   struct Projection {
-    size_t obsIndex;
-    std::vector<cv::Point2d> projPoints;  // in image space
+    Observation::Ptr observation;
+    std::vector<cv::Point2d> projPoints;
+    cv::Point2d imageCentroid;
+  };
+
+  struct Match {
+    size_t bbInd = -1;
+    double score;
+    explicit operator bool() const { return bbInd >= 0; };
+    void unmatch() { bbInd = -1; };
   };
 
   /**
@@ -54,19 +68,20 @@ class Matcher {
   /* Publishers */
 
   image_transport::Publisher projectedPub_;
+  ros::Publisher pclPub_;
 
   /**
    * PRIVATE METHODS
    */
   static void copyPCLPtrVec(const std::vector<PCL::Ptr> &input, std::vector<PCL::Ptr> &output);
-  std::list<Projection> transformPCLs(
-      const std::vector<PCL::Ptr> &pcls, const Eigen::Transform<double, 3, Eigen::Projective> &tf) const;
-  void cameraTransformPCLs(const std::vector<PCL::Ptr> &transformedPCL,
-                           const Extrinsics &camTf) const;
-  void projections(const std::vector<PCL::Ptr> &recons, std::list<Projection> &projs) const;
-  void publishImage(const std::list<Projection> &projections,
-                     const geometry_msgs::PoseArray::ConstPtr &bbs) const;
-  void match(const std::list<Projection> &projections, const geometry_msgs::PoseArray::ConstPtr &bbs, std::vector<Cone> &matchings);
+  void projections(const std::vector<PCL::Ptr> &recons, const std::vector<Observation::Ptr> &observations, std::vector<Projection> &projs) const;
+  void publishPCLs(const std::vector<PCL::Ptr> &pcls) const;
+  void publishImage(const std::vector<Projection> &projections,
+                    const geometry_msgs::PoseArray::ConstPtr &bbs) const;
+  inline double bbHeightFromDist(const double &dist) const;
+  static Point bbCentroidAndHeight(const geometry_msgs::Pose &bb);
+  void match(const size_t &bbInd, const geometry_msgs::PoseArray &bbs, const KDTree &projsKDT, const std::vector<Projection> &projections, std::vector<Match> &matches, std::vector<std::set<size_t>> &projsToExclude) const;
+  void computeMatches(const std::vector<Projection> &projections, const geometry_msgs::PoseArray &bbs);
 
  public:
   enum Which { LEFT,

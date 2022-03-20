@@ -46,7 +46,15 @@ int main(int argc, char **argv) {
   typedef message_filters::sync_policies::ApproximateTime<as_msgs::ObservationArray, nav_msgs::Odometry, geometry_msgs::PoseArray, geometry_msgs::PoseArray> MySyncPolicy;
   message_filters::Synchronizer<MySyncPolicy> syncDetections(MySyncPolicy(100), obsSub, state_carSub, left_bbSub, right_bbSub);
   syncDetections.registerCallback(boost::bind(&Preproc::callback, &preproc, _1, _2, _3, _4));
+  std::vector<Point> nose({Point(), Point(1.0,2.0,3.0), Point(5.0,5.0,5.0), Point(-5.0,-5.0,-5.0), Point(1.0, 1.0, 1.0), Point(-6.0,-6.0,-6.0)});
+  KDTree prova(nose);
 
+  KDTData<size_t> ar = prova.nearest_index(Point(-5.0,-5.0,-5.0), {0, 3, 1});
+  // no va el excloure
+  std::cout << bool(ar) << std::endl;
+  std::cout << nose[*ar] << std::endl;
+
+  std::cout << std::endl;
   ros::Rate rate(params.common.frequency);
   while (ros::ok()) {
     ros::spinOnce();

@@ -19,7 +19,9 @@ class Observation {
   static Point computeCentroid(const PCL &pcl);
 
  public:
-  typedef std::shared_ptr<::Observation> Ptr;
+  using Ptr = std::shared_ptr<Observation>;
+  using ConstPtr = std::shared_ptr<const Observation>;
+  
   /**
    * PUBLIC CONSTRUCTORS AND DESTRUCTOR
    */
