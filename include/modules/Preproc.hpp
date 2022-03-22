@@ -35,14 +35,14 @@ class Preproc {
   ros::NodeHandle *nh_;
   Params::Preproc params_;
   bool hasData_;
-  std::vector<Observation::Ptr> currentObservations_;
+  std::vector<Observation> currentObservations_;
   geometry_msgs::PoseArray::ConstPtr leftBbs_, rightBbs_;
 
   /**
    * PRIVATE METHODS
    */
 
-  std::list<Observation::Ptr> possiblesSamePoint(const size_t &pointIndex, const KDTree &observationsKDT, const std::vector<Observation::Ptr> &allObs, std::vector<bool> &visited) const;
+  std::list<const Observation*> possiblesSamePoint(const size_t &pointIndex, const KDTree &observationsKDT, const std::vector<Observation> &allObs, std::vector<bool> &visited) const;
   void preprocess(const as_msgs::ObservationArray &observations, const Eigen::Affine3d &carTf);
 
  public:

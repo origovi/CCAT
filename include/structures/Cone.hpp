@@ -22,6 +22,7 @@ class Cone {
   
   enum Type { Yellow, Blue, SmallOrange, BigOrange, None } type;
   enum Operation { ADD, DELETE } operation;
+  // considerar treure la observacio
   Observation::Ptr observation;
   double matchingDist;
 

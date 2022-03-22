@@ -30,13 +30,19 @@ class Observation {
   Observation(const PCL::Ptr &pcl, const float &confidence, const size_t &id);
   Observation(const PCL::Ptr &pcl, const Point &centroid, const float &confidence, const size_t &id);
   Observation(const as_msgs::Observation &obs, const size_t &id);
-  Observation(const std::list<Observation::Ptr> &observationsToMean);
+  Observation(const std::list<const Observation*> &observationsToMean);
   ~Observation();
 
   /* PUBLIC ATTRIBUTES */
 
   PCL::Ptr pcl;
-  Point centroid;
+
+  Point centroid_global;
+  Point centroid_base_link;
+  Point centroid_transformed;
+
+  double distToCar;
+
   double confidence;
   size_t id;
 };

@@ -53,7 +53,8 @@ struct Params {
 
   struct Matcher {
     bool debug;
-    double max_match_dist;
+    double max_match_search_dist;
+    double max_match_real_dist;
     int image_width, image_height;
     float cone_height, cone_width;
     struct {

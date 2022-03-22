@@ -67,6 +67,8 @@ class Point {
   friend std::ostream &operator<<(std::ostream &os, const Point &p);
 
   void transform(const Eigen::Affine3d &tf);
+  Point transformed(const Eigen::Affine3d &tf);
+
   Eigen::Vector3f vec3f() const;
   geometry_msgs::Point gmPoint() const;
 

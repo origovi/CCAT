@@ -1,3 +1,5 @@
+#include <ccat/ExtrinsicsConfig.h>
+#include <dynamic_reconfigure/server.h>
 #include <geometry_msgs/PoseArray.h>
 #include <message_filters/subscriber.h>
 #include <message_filters/sync_policies/approximate_time.h>
@@ -5,14 +7,11 @@
 #include <nav_msgs/Odometry.h>
 #include <ros/ros.h>
 
-#include <dynamic_reconfigure/server.h>
-#include <ccat/ExtrinsicsConfig.h>
-
-#include "structures/Params.hpp"
 #include "modules/Matcher.hpp"
-#include "modules/Preproc.hpp"
 #include "modules/Merger.hpp"
+#include "modules/Preproc.hpp"
 #include "modules/Tracker.hpp"
+#include "structures/Params.hpp"
 
 int main(int argc, char **argv) {
   ros::init(argc, argv, "ccat");
@@ -50,6 +49,7 @@ int main(int argc, char **argv) {
   syncDetections.registerCallback(boost::bind(&Preproc::callback, &preproc, _1, _2, _3, _4));
 
   /* Publishers */
+
   ros::Publisher conesPub(nh->advertise<as_msgs::ConeArray>(params.common.topics.output.cones, 1));
 
   /* Main loop */
@@ -62,6 +62,7 @@ int main(int argc, char **argv) {
       matcherR.run(preproc.getData(matcherR.which));
       merger.run(matcherL.getData(), matcherR.getData());
       tracker.run(merger.getData());
+      std::cout << std::endl;
       preproc.reset();
     }
     if (tracker.hasData()) conesPub.publish(tracker.getData());

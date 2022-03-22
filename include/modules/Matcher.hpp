@@ -53,6 +53,7 @@ class Matcher {
     void match(size_t bbInd, double dist) {
       valid_ = true;
       bbInd_ = bbInd;
+      dist_ = dist;
     }
     void unmatch() { valid_ = false; }
     const size_t &bbInd() const { return bbInd_; }
@@ -83,8 +84,8 @@ class Matcher {
    * PRIVATE METHODS
    */
   static void copyPCLPtrVec(const std::vector<PCL::Ptr> &input, std::vector<PCL::Ptr> &output);
-  void projections(const std::vector<PCL::Ptr> &recons, const std::vector<Observation::Ptr> &observations, std::vector<Projection> &projs) const;
-  void publishPCLs(const std::vector<PCL::Ptr> &pcls) const;
+  void projections(const std::vector<Observation::Ptr> &observations, std::vector<Projection> &projs) const;
+  void publishPCLs(const std::vector<Observation::Ptr> &observations) const;
   void publishImage(const std::vector<Projection> &projections,
                     const geometry_msgs::PoseArray::ConstPtr &bbs) const;
   inline double bbHeightFromDist(const double &dist) const;
@@ -96,7 +97,7 @@ class Matcher {
   enum Which { LEFT,
                RIGHT };
   struct RqdData {
-    std::vector<Observation::Ptr> observations;
+    std::vector<Observation> observations;
     geometry_msgs::PoseArray::ConstPtr bbs;
   };
 

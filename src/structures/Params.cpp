@@ -25,9 +25,12 @@ Params::Params(const ros::NodeHandle &nh) {
 
   // Common Part
   nh.param<bool>("/AS/P/ccat/matcher/common/debug", matcherL.debug, false);
-  nh.param<double>("/AS/P/ccat/matcher/common/max_match_dist", matcherL.max_match_dist, 100.0);
+  nh.param<double>("/AS/P/ccat/matcher/common/max_match_search_dist", matcherL.max_match_search_dist, 50.0);
+  nh.param<double>("/AS/P/ccat/matcher/common/max_match_real_dist", matcherL.max_match_real_dist, 50.0);
   nh.param<int>("/AS/P/ccat/matcher/common/image_width", matcherL.image_width, 1024);
   nh.param<int>("/AS/P/ccat/matcher/common/image_height", matcherL.image_height, 768);
+  nh.param<float>("/AS/P/ccat/matcher/common/cone_width", matcherL.cone_width, 0.228);
+  nh.param<float>("/AS/P/ccat/matcher/common/cone_height", matcherL.cone_height, 0.325);
   matcherR = matcherL;
 
   // Different Part

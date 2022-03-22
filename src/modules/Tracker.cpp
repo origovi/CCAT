@@ -70,7 +70,7 @@ void Tracker::publishMarkers() const {
     mB.header.frame_id = "base_link";
   }
   markerBaseLinkPub_.publish(maBaseLink);
-  //markerGlobalPub_.publish(maGlobal);
+  markerGlobalPub_.publish(maGlobal);
 }
 
 /**

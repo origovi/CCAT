@@ -10,10 +10,10 @@ Preproc::~Preproc() {}
  * PRIVATE METHODS
  */
 
-std::list<Observation::Ptr> Preproc::possiblesSamePoint(const size_t &pointIndex, const KDTree &observationsKDT, const std::vector<Observation::Ptr> &allObs, std::vector<bool> &visited) const {
-  std::list<Observation::Ptr> res;
-  res.push_back(allObs[pointIndex]);
-  std::vector<size_t> ar(observationsKDT.neighborhood_indices(allObs[pointIndex]->centroid, params_.cluster_dist));
+std::list<const Observation*> Preproc::possiblesSamePoint(const size_t &pointIndex, const KDTree &observationsKDT, const std::vector<Observation> &allObs, std::vector<bool> &visited) const {
+  std::list<const Observation*> res;
+  res.push_back(&allObs[pointIndex]);
+  std::vector<size_t> ar(observationsKDT.neighborhood_indices(allObs[pointIndex].centroid_global, params_.cluster_dist));
   for (const size_t &ind : ar) {
     if (!visited[ind]) {
       visited[ind] = true;
@@ -24,7 +24,7 @@ std::list<Observation::Ptr> Preproc::possiblesSamePoint(const size_t &pointIndex
 }
 
 void Preproc::preprocess(const as_msgs::ObservationArray &observations, const Eigen::Affine3d &carTf) {
-  std::vector<Observation::Ptr> allObs;
+  std::vector<Observation> allObs;
   cvrs::as_obsVec2ObsVec(observations.observations, allObs);
   std::vector<Point> allCentroids;
   cvrs::obsVec2PointVec(allObs, allCentroids);
@@ -39,13 +39,15 @@ void Preproc::preprocess(const as_msgs::ObservationArray &observations, const Ei
       res.emplace_back(possiblesSamePoint(i, observationsKDT, allObs, visited));
     }
   }
+  res.shrink_to_fit();
 
   // Transform the points to car location
-  for (size_t i = 0; i < allObs.size(); ++i) {
-    pcl::transformPointCloud(*(allObs[i]->pcl), *(allObs[i]->pcl), carTf);
-    allObs[i]->centroid.transform(carTf);
+  for (size_t i = 0; i < res.size(); ++i) {
+    pcl::transformPointCloud(*res[i].pcl, *res[i].pcl, carTf);
+    res[i].centroid_base_link = res[i].centroid_global.transformed(carTf);
+    res[i].distToCar = Point::dist(res[i].centroid_base_link);
   }
-  currentObservations_ = allObs;
+  currentObservations_ = res;
 }
 
 /**

@@ -48,7 +48,7 @@ void Merger::run(const std::vector<Cone> &conesLeft, const std::vector<Cone> &co
     if (it == projCones.end()) {
       projCones.insert({cone.observation->id, &cone});
     }
-    else if (it->second->matchingDist > cone.matchingDist) {
+    else if (it->second->type == Cone::None or it->second->matchingDist > cone.matchingDist) {
       it->second = &cone;
     }
   }

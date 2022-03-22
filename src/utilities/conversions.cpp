@@ -1,16 +1,24 @@
 #include "utilities/conversions.hpp"
 
-void cvrs::as_obsVec2ObsVec(const std::vector<as_msgs::Observation>& observations, std::vector<Observation::Ptr> &res) {
+void cvrs::as_obsVec2ObsVec(const std::vector<as_msgs::Observation>& observations, std::vector<Observation> &res) {
   res.resize(observations.size());
   for (size_t i = 0; i < observations.size(); ++i) {
-    res[i] = std::make_shared<Observation>(Observation(observations[i], i));
+    res[i] = Observation(observations[i], i);
   }
 }
 
-void cvrs::obsVec2PointVec(const std::vector<Observation::Ptr>& observations, std::vector<Point> &res) {
+void cvrs::obsVec2PointVec(const std::vector<Observation>& observations, std::vector<Point> &res) {
   res.resize(observations.size());
   for (size_t i = 0; i < observations.size(); ++i) {
-    res[i] = observations[i]->centroid;
+    res[i] = observations[i].centroid_global;
+  }
+}
+
+void cvrs::obs2ObsPtr(const std::vector<Observation> &observations, std::vector<Observation::Ptr> &res) {
+  res.resize(observations.size());
+  for (size_t i = 0; i < observations.size(); ++i) {
+    res[i] = std::make_shared<Observation>(observations[i]);
+    res[i]->pcl = pcl::make_shared<PCL>(*res[i]->pcl);
   }
 }
 
@@ -26,7 +34,8 @@ void cvrs::coneVec2As_ConeArray(const std::vector<Cone> &cones, as_msgs::ConeArr
   as_msgs::Cone cone;
   for (size_t i = 0; i < cones.size(); i++) {
     cone.id = cones[i].observation->id;
-    cone.position_base_link = cones[i].observation->centroid.gmPoint();
+    cone.position_base_link = cones[i].observation->centroid_base_link.gmPoint();
+    cone.position_global = cones[i].observation->centroid_global.gmPoint();
     cone.type = cones[i].typeToAsMsgs();
     res.cones[i] = cone;
   }

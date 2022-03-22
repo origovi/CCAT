@@ -10,20 +10,20 @@ void Matcher::copyPCLPtrVec(const std::vector<PCL::Ptr> &input, std::vector<PCL:
   }
 }
 
-void Matcher::projections(const std::vector<PCL::Ptr> &recons, const std::vector<Observation::Ptr> &observations, std::vector<Projection> &projs) const {
-  projs.reserve(recons.size());
+void Matcher::projections(const std::vector<Observation::Ptr> &observations, std::vector<Projection> &projs) const {
+  projs.reserve(observations.size());
   Projection proj;
   //std::cout << '[' << which << "]: Recons Size: " << recons.size() << std::endl;
 
-  for (size_t i = 0; i < recons.size(); i++) {
+  for (size_t i = 0; i < observations.size(); i++) {
     proj.observation = observations[i];
     bool hasAnyPointInImage = false;
 
-    proj.projPoints.resize(recons[i]->size());
+    proj.projPoints.resize(observations[i]->pcl->size());
 
-    for (size_t pInd = 0; pInd < recons[i]->size(); pInd++) {
+    for (size_t pInd = 0; pInd < observations[i]->pcl->size(); pInd++) {
       // Transform point with camera intrinsics
-      Eigen::Vector3f transformedP(intrinsics_ * recons[i]->operator[](pInd).getVector3fMap());
+      Eigen::Vector3f transformedP(intrinsics_ * observations[i]->pcl->operator[](pInd).getVector3fMap());
 
       // Convert point to image coordinates (axis must be reassigned)
       proj.projPoints[pInd].x = transformedP.x() / transformedP.z();
@@ -41,7 +41,7 @@ void Matcher::projections(const std::vector<PCL::Ptr> &recons, const std::vector
     if (hasAnyPointInImage) {
       // 1. Transform the centroid of the pcl to image coords
       // 2. Push the projection to the result
-      Eigen::Vector3f imageCentroidVec(intrinsics_ * observations[i]->centroid.vec3f());
+      Eigen::Vector3f imageCentroidVec(intrinsics_ * observations[i]->centroid_transformed.vec3f());
       proj.imageCentroid.x = imageCentroidVec.x() / imageCentroidVec.z();
       proj.imageCentroid.y = imageCentroidVec.y() / imageCentroidVec.z();
       projs.push_back(proj);
@@ -50,10 +50,10 @@ void Matcher::projections(const std::vector<PCL::Ptr> &recons, const std::vector
   std::cout << '[' << which << "]: Projs Size: " << projs.size() << std::endl;
 }
 
-void Matcher::publishPCLs(const std::vector<PCL::Ptr> &pcls) const {
+void Matcher::publishPCLs(const std::vector<Observation::Ptr> &observations) const {
   PCL pclToPaint;
-  for (auto &pcl : pcls) {
-    pclToPaint += *pcl;
+  for (const Observation::Ptr &obs : observations) {
+    pclToPaint += *obs->pcl;
   }
   sensor_msgs::PointCloud2 pcl;
   pcl::toROSMsg(pclToPaint, pcl);
@@ -81,8 +81,9 @@ void Matcher::publishImage(const std::vector<Projection> &projections,
   // Paint the points
   for (const Projection &proj : projections) {
     for (const cv::Point2d &p : proj.projPoints) {
-      cv::circle(image, p, 3, CV_RGB(255, 0, 0), -1);
+      cv::circle(image, p, 2, CV_RGB(255, 0, 0), -1);
     }
+    cv::circle(image, proj.imageCentroid, 4, CV_RGB(0, 255, 0), -1);
   }
 
   // The timestamp will be taken from the bbs message header
@@ -91,12 +92,20 @@ void Matcher::publishImage(const std::vector<Projection> &projections,
 }
 
 double Matcher::bbHeightFromDist(const double &dist) const {
-  Eigen::Vector3f aux = intrinsics_ * Eigen::Vector3f(0.0, params_.cone_height, dist);
-  return double(aux.y() / aux.z());
+  return 0.0;
+  // Eigen::Vector3f aux = intrinsics_ * Eigen::Vector3f(dist, 0.0, params_.cone_height);
+  // return double(aux.y() / aux.z());
+  Eigen::Vector3f top = intrinsics_ * Eigen::Vector3f(0.0, params_.cone_height, dist);
+  //std::cout << "Top: " << top.x() << " " << top.y() << " " << top.z() << std::endl;
+  Eigen::Vector3f bottom = intrinsics_ * Eigen::Vector3f(0.0, 0.0, dist);
+  // std::cout << "Bottom: " << bottom.x() << " " << bottom.y() << " " << bottom.z() << std::endl;
+  return double((top.y() / top.z())-(bottom.y() / bottom.z()));
+
 }
 
 Point Matcher::bbCentroidAndHeight(const geometry_msgs::Pose &bb) {
-  return Point((bb.position.x + bb.position.z) / 2, (bb.position.y + bb.orientation.w) / 2, abs(bb.position.y - bb.orientation.w));
+  //return Point((bb.orientation.x + bb.orientation.z) / 2, (bb.orientation.y + bb.orientation.w) / 2, abs(bb.position.y - bb.orientation.w));
+  return Point((bb.orientation.x + bb.orientation.z) / 2, (bb.orientation.y + bb.orientation.w) / 2, 0.0);
 }
 
 void Matcher::match(const size_t &bbInd, const geometry_msgs::PoseArray &bbs, const KDTree &projsKDT, std::vector<Match> &matches, std::vector<std::set<size_t>> &projsToExclude) const {
@@ -107,8 +116,9 @@ void Matcher::match(const size_t &bbInd, const geometry_msgs::PoseArray &bbs, co
   double dist = Point::dist(bbCentroidAndHeightP, projPointInd->first);
 
   while (ros::ok() and (isFirst or dist >= matches[projPointInd->second].dist())) {
+
     // No matching is possible
-    if (!bool(projPointInd) /* or dist > params_.max_match_dist */) {
+    if (!bool(projPointInd) or dist > params_.max_match_search_dist) {
       return;
     }
 
@@ -149,15 +159,17 @@ void Matcher::computeMatches(const std::vector<Projection> &projections, const g
   std::vector<Point> pointsToBuildTheKDTree;
   pointsToBuildTheKDTree.reserve(projections.size());
   for (const Projection &proj : projections) {
-    pointsToBuildTheKDTree.emplace_back(proj.imageCentroid.x, proj.imageCentroid.y, bbHeightFromDist(Point::dist(proj.observation->centroid)));
+    //double alcada = bbHeightFromDist(proj.observation->distToCar);
+    //std::cout << "alcada: " << alcada << std::endl;
+    //std::cout << "centroid: " << proj.observation->centroid << std::endl;
+    //std::cout << "imgCentroid: " << proj.imageCentroid.x << ", " << proj.imageCentroid.y << std::endl;
+    pointsToBuildTheKDTree.emplace_back(proj.imageCentroid.x, proj.imageCentroid.y, bbHeightFromDist(Point::dist(proj.observation->centroid_base_link)));
   }
   KDTree projsKDT(pointsToBuildTheKDTree);
-  ROS_WARN("control2");
+
   for (size_t bbInd = 0; bbInd < bbs.poses.size(); bbInd++) {
     match(bbInd, bbs, projsKDT, matches, projsToExclude);
   }
-
-  ROS_WARN("control");
 
   // Create the cones:
   // 1. Every SLAM-seen Observation will have the equivalent Cone
@@ -168,8 +180,12 @@ void Matcher::computeMatches(const std::vector<Projection> &projections, const g
   currentCones_.resize(projections.size());
   size_t matches_num = 0;
   for (size_t projInd = 0; projInd < matches.size(); projInd++) {
+    // Create a cone from this observation giving it the matching distance
     currentCones_[projInd] = Cone(projections[projInd].observation, matches[projInd].dist());
-    if (bool(matches[projInd])) {
+    
+    // If there is a match for this observation and it fulfills the conditions to classify the cone:
+    // 1. The distance from the cone to the car is below a maximum
+    if (bool(matches[projInd]) and projections[projInd].observation->distToCar <= params_.max_match_real_dist) {
       matches_num++;
       currentCones_[projInd].setTypeFromAsMsgs(bbs.poses[matches[projInd].bbInd()].position.x);
     }
@@ -218,12 +234,13 @@ void Matcher::cfgCallback(const ccat::ExtrinsicsConfig &config, uint32_t level) 
 /* Functions */
 
 void Matcher::run(const RqdData &data) {
-  std::vector<PCL::Ptr> pcls;
-  cvrs::obs2PCLs(data.observations, pcls);
+  std::vector<Observation::Ptr> observations(data.observations.size());
+  cvrs::obs2ObsPtr(data.observations, observations);
 
-  // Transform the pointclouds to camera coordinates
-  for (PCL::Ptr &pcl : pcls) {
-    pcl::transformPointCloud(*pcl, *pcl, extrinsics_);
+  // Transform the observations (pcls AND centroid) to camera space
+  for (Observation::Ptr &obs : observations) {
+    pcl::transformPointCloud(*obs->pcl, *obs->pcl, extrinsics_);
+    obs->centroid_transformed = obs->centroid_base_link.transformed(extrinsics_);
   }
 
   // Filter the points so only the points in front of the camera (visibles)
@@ -232,24 +249,24 @@ void Matcher::run(const RqdData &data) {
   pcl::ConditionAnd<PCLPoint>::Ptr zFilterCond(pcl::make_shared<pcl::ConditionAnd<PCLPoint>>());
   zFilterCond->addComparison(pcl::make_shared<pcl::FieldComparison<PCLPoint>>("z", pcl::ComparisonOps::GE, 0.0));
   zFilter.setCondition(zFilterCond);
-  for (PCL::Ptr &pcl : pcls) {
-    zFilter.setInputCloud(pcl);
-    zFilter.filter(*pcl);
+  for (Observation::Ptr &obs : observations) {
+    zFilter.setInputCloud(obs->pcl);
+    zFilter.filter(*obs->pcl);
   }
 
   // If debug, publish all the cones in camera coordinates
-  if (params_.debug) publishPCLs(pcls);
+  if (params_.debug) publishPCLs(observations);
 
   // Create the projections of the points, that is:
   // 1. Transform all the points to image space
   // 2. Save only the observations which have at least one point on the image
   std::vector<Projection> projs;
-  projections(pcls, data.observations, projs);
+  projections(observations, projs);
 
   // If debug, publish the images showing the projections (aka calibration)
   if (params_.debug) publishImage(projs, data.bbs);
 
-  // Now obtain the matches
+  // Now obtain the matches and save the cones
   computeMatches(projs, *data.bbs);
 }
 
