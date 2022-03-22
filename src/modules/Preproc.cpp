@@ -23,7 +23,7 @@ std::list<const Observation*> Preproc::possiblesSamePoint(const size_t &pointInd
   return res;
 }
 
-void Preproc::preprocess(const as_msgs::ObservationArray &observations, const Eigen::Affine3d &carTf) {
+void Preproc::preprocess(const as_msgs::ObservationArray &observations) {
   std::vector<Observation> allObs;
   cvrs::as_obsVec2ObsVec(observations.observations, allObs);
   std::vector<Point> allCentroids;
@@ -43,8 +43,8 @@ void Preproc::preprocess(const as_msgs::ObservationArray &observations, const Ei
 
   // Transform the points to car location
   for (size_t i = 0; i < res.size(); ++i) {
-    pcl::transformPointCloud(*res[i].pcl, *res[i].pcl, carTf);
-    res[i].centroid_base_link = res[i].centroid_global.transformed(carTf);
+    pcl::transformPointCloud(*res[i].pcl, *res[i].pcl, carTf_);
+    res[i].centroid_base_link = res[i].centroid_global.transformed(carTf_);
     res[i].distToCar = Point::dist(res[i].centroid_base_link);
   }
   currentObservations_ = res;
@@ -79,9 +79,8 @@ void Preproc::callback(const as_msgs::ObservationArray::ConstPtr &newObservation
                        const geometry_msgs::PoseArray::ConstPtr &leftDetections,
                        const geometry_msgs::PoseArray::ConstPtr &rightDetections) {
   ROS_INFO("CALLBACK");
-  Eigen::Affine3d carTf;
-  tf::poseMsgToEigen(carPos->pose.pose, carTf);
-  carTf = carTf.inverse();
+  tf::poseMsgToEigen(carPos->pose.pose, carTf_);
+  carTf_ = carTf_.inverse();
   // Invert y and z axis
   // extrinsics_car_.translation().z() *= -1;
   // extrinsics_car_.translation().y() *= -1;
@@ -92,7 +91,7 @@ void Preproc::callback(const as_msgs::ObservationArray::ConstPtr &newObservation
   if (newObservations->observations.empty())
     ROS_WARN("Reading empty observations");
 
-  preprocess(*newObservations, carTf);
+  preprocess(*newObservations);
   std::cout << "orig size: " << newObservations->observations.size() << " process size: " << currentObservations_.size() << std::endl;
   hasData_ = true;
 }
@@ -118,4 +117,8 @@ Matcher::RqdData Preproc::getData(const Matcher::Which &which) const {
 
 const bool &Preproc::hasData() const {
   return hasData_;
+}
+
+const Eigen::Affine3d &Preproc::getCarTf() const {
+  return carTf_;
 }

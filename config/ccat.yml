@@ -16,8 +16,8 @@ preproc:
 matcher:
   common:
     debug:                    true
-    max_match_search_dist:    20.0
-    max_match_real_dist:      30.0
+    max_match_search_dist:    30.0
+    max_match_real_dist:      50.0
     image_width:              1024
     image_height:             768
     cone_height:              0.325
@@ -31,6 +31,7 @@ matcher:
 
 tracker:
   debug:                      true
+  same_cone_max_distSq:       0.09
   topics:
     output:
       markers_base_link:      "/AS/P/ccat/markers/base_link"

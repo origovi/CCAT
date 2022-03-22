@@ -10,6 +10,8 @@
 
 #include "structures/Cone.hpp"
 #include "structures/Params.hpp"
+#include "structures/Tracking.hpp"
+#include "structures/KDTree.hpp"
 #include "utilities/conversions.hpp"
 
 class Tracker {
@@ -28,13 +30,18 @@ class Tracker {
   Params::Tracker params_;
   ros::Publisher markerBaseLinkPub_, markerGlobalPub_;
 
+  size_t lastId_;
+  std::list<Tracking> trackings_;
+
   as_msgs::ConeArray currentCones_;
 
   /**
    * PRIVATE METHODS
    */
-
+  void updateCurrentCones(const Eigen::Affine3d &carTf);
   void publishMarkers() const;
+
+  void getTrackingPoints(std::vector<Point> &points, std::vector<Tracking*> &trackingPtrs);
 
  public:
   ~Tracker();
@@ -53,7 +60,7 @@ class Tracker {
 
   void init(ros::NodeHandle *const &nh, const Params::Tracker &params);
 
-  void run(const std::vector<Cone> &cones);
+  void run(const std::vector<Cone> &cones, const Eigen::Affine3d &carTf);
 
   /* Callbacks */
 

@@ -36,6 +36,7 @@ add_library(${PROJECT_NAME}
   src/structures/Point.cpp
   src/structures/Observation.cpp
   src/structures/Cone.cpp
+  src/structures/Tracking.cpp
   src/utilities/conversions.cpp
 )
 

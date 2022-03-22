@@ -31,12 +31,10 @@ void cvrs::obs2PCLs(const std::vector<Observation::Ptr> &observations, std::vect
 
 void cvrs::coneVec2As_ConeArray(const std::vector<Cone> &cones, as_msgs::ConeArray &res) {
   res.cones.resize(cones.size());
-  as_msgs::Cone cone;
   for (size_t i = 0; i < cones.size(); i++) {
-    cone.id = cones[i].observation->id;
-    cone.position_base_link = cones[i].observation->centroid_base_link.gmPoint();
-    cone.position_global = cones[i].observation->centroid_global.gmPoint();
-    cone.type = cones[i].typeToAsMsgs();
-    res.cones[i] = cone;
+    res.cones[i].id = cones[i].observation->id;
+    res.cones[i].position_base_link = cones[i].observation->centroid_base_link.gmPoint();
+    res.cones[i].position_global = cones[i].observation->centroid_global.gmPoint();
+    res.cones[i].type = cones[i].typeToAsMsgs();
   }
 }

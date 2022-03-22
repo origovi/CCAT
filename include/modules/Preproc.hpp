@@ -37,13 +37,14 @@ class Preproc {
   bool hasData_;
   std::vector<Observation> currentObservations_;
   geometry_msgs::PoseArray::ConstPtr leftBbs_, rightBbs_;
+  Eigen::Affine3d carTf_;
 
   /**
    * PRIVATE METHODS
    */
 
   std::list<const Observation*> possiblesSamePoint(const size_t &pointIndex, const KDTree &observationsKDT, const std::vector<Observation> &allObs, std::vector<bool> &visited) const;
-  void preprocess(const as_msgs::ObservationArray &observations, const Eigen::Affine3d &carTf);
+  void preprocess(const as_msgs::ObservationArray &observations);
 
  public:
   /**
@@ -72,6 +73,7 @@ class Preproc {
   /* Getters */
   Matcher::RqdData getData(const Matcher::Which &which) const;
   const bool &hasData() const;
+  const Eigen::Affine3d &getCarTf() const;
 };
 
 #endif  // PREPROC_HPP

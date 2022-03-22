@@ -94,7 +94,7 @@ void Point::transform(const Eigen::Affine3d &tf) {
   z = product.z();
 }
 
-Point Point::transformed(const Eigen::Affine3d &tf) {
+Point Point::transformed(const Eigen::Affine3d &tf) const {
   Eigen::Vector3d product = tf*Eigen::Vector3d(x, y, z);
   return Point(product.x(), product.y(), product.z());
 }

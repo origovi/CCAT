@@ -61,7 +61,7 @@ int main(int argc, char **argv) {
       matcherL.run(preproc.getData(matcherL.which));
       matcherR.run(preproc.getData(matcherR.which));
       merger.run(matcherL.getData(), matcherR.getData());
-      tracker.run(merger.getData());
+      tracker.run(merger.getData(), preproc.getCarTf());
       std::cout << std::endl;
       preproc.reset();
     }
