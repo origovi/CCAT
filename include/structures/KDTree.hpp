@@ -45,7 +45,7 @@ class KDTData {
     value = _value;
     return *this;
   }
-  explicit operator bool() { return valid; }
+  explicit operator bool() const { return valid; }
   T &operator*() { return value; }
   T *operator->() { return &value; }
 };
@@ -70,7 +70,7 @@ class KDNode {
   double coord(const size_t &);
 
   // conversions
-  explicit operator bool();
+  explicit operator bool() const;
   explicit operator size_t();
   explicit operator pointIndex();
 };

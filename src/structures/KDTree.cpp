@@ -34,7 +34,7 @@ KDNode::KDNode(const pointIndex &pi, const KDNodePtr &left_,
 KDNode::~KDNode() = default;
 
 double KDNode::coord(const size_t &idx) { return x->at(idx); }
-KDNode::operator bool() { return bool(index); }
+KDNode::operator bool() const { return bool(index); }
 KDNode::operator size_t() { return *index; }
 KDNode::operator pointIndex() { return pointIndex(*x, *index); }
 

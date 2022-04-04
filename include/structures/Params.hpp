@@ -87,6 +87,7 @@ struct Params {
   struct Tracker {
     bool debug;
     double same_cone_max_distSq;
+    bool fancy_markers;
     struct {
       struct {
       } input;

@@ -10,7 +10,7 @@ void Matcher::copyPCLPtrVec(const std::vector<PCL::Ptr> &input, std::vector<PCL:
   }
 }
 
-void Matcher::projections(const std::vector<Observation::Ptr> &observations, std::vector<Projection> &projs) const {
+void Matcher::projections(const std::vector<Observation::Ptr> &observations, std::vector<Projection> &projs) {
   projs.reserve(observations.size());
   Projection proj;
   //std::cout << '[' << which << "]: Recons Size: " << recons.size() << std::endl;
@@ -45,6 +45,8 @@ void Matcher::projections(const std::vector<Observation::Ptr> &observations, std
       proj.imageCentroid.x = imageCentroidVec.x() / imageCentroidVec.z();
       proj.imageCentroid.y = imageCentroidVec.y() / imageCentroidVec.z();
       projs.push_back(proj);
+    } else {
+      currentCones_.emplace_back(observations[i]);
     }
   }
   std::cout << '[' << which << "]: Projs Size: " << projs.size() << std::endl;
@@ -91,13 +93,13 @@ void Matcher::publishImage(const std::vector<Projection> &projections,
   projectedPub_.publish(msg);
 }
 
-double Matcher::bbHeightFromDist(const double &dist) const {
+double Matcher::bbHeightFromZ(const double &z) const {
   return 0.0;
   // Eigen::Vector3f aux = intrinsics_ * Eigen::Vector3f(dist, 0.0, params_.cone_height);
   // return double(aux.y() / aux.z());
-  Eigen::Vector3f top = intrinsics_ * Eigen::Vector3f(0.0, params_.cone_height, dist);
+  Eigen::Vector3f top = intrinsics_ * Eigen::Vector3f(0.0, params_.cone_height, z);
   //std::cout << "Top: " << top.x() << " " << top.y() << " " << top.z() << std::endl;
-  Eigen::Vector3f bottom = intrinsics_ * Eigen::Vector3f(0.0, 0.0, dist);
+  Eigen::Vector3f bottom = intrinsics_ * Eigen::Vector3f(0.0, 0.0, z);
   // std::cout << "Bottom: " << bottom.x() << " " << bottom.y() << " " << bottom.z() << std::endl;
   return double((top.y() / top.z())-(bottom.y() / bottom.z()));
 
@@ -159,11 +161,11 @@ void Matcher::computeMatches(const std::vector<Projection> &projections, const g
   std::vector<Point> pointsToBuildTheKDTree;
   pointsToBuildTheKDTree.reserve(projections.size());
   for (const Projection &proj : projections) {
-    //double alcada = bbHeightFromDist(proj.observation->distToCar);
+    //double alcada = bbHeightFromZ(proj.observation->distToCar);
     //std::cout << "alcada: " << alcada << std::endl;
     //std::cout << "centroid: " << proj.observation->centroid << std::endl;
     //std::cout << "imgCentroid: " << proj.imageCentroid.x << ", " << proj.imageCentroid.y << std::endl;
-    pointsToBuildTheKDTree.emplace_back(proj.imageCentroid.x, proj.imageCentroid.y, bbHeightFromDist(Point::dist(proj.observation->centroid_base_link)));
+    pointsToBuildTheKDTree.emplace_back(proj.imageCentroid.x, proj.imageCentroid.y, bbHeightFromZ(proj.observation->centroid_transformed.z));
   }
   KDTree projsKDT(pointsToBuildTheKDTree);
 
@@ -176,18 +178,16 @@ void Matcher::computeMatches(const std::vector<Projection> &projections, const g
   // 2. The Cone will have the type of the BB that it's matched to
   // 3. TODO: if any Observation is very close and does not have a match,
   //    delete it
-  //currentCones_.clear();
-  currentCones_.resize(projections.size());
   size_t matches_num = 0;
   for (size_t projInd = 0; projInd < matches.size(); projInd++) {
     // Create a cone from this observation giving it the matching distance
-    currentCones_[projInd] = Cone(projections[projInd].observation, matches[projInd].dist());
+    currentCones_.emplace_back(projections[projInd].observation, matches[projInd].dist());
     
     // If there is a match for this observation and it fulfills the conditions to classify the cone:
     // 1. The distance from the cone to the car is below a maximum
     if (bool(matches[projInd]) and projections[projInd].observation->distToCar <= params_.max_match_real_dist) {
       matches_num++;
-      currentCones_[projInd].setTypeFromAsMsgs(bbs.poses[matches[projInd].bbInd()].position.x);
+      currentCones_.back().setTypeFromAsMsgs(bbs.poses[matches[projInd].bbInd()].position.x);
     }
   }
   std::cout << '[' << which << "]: Matchings Size: " << matches_num << std::endl;
@@ -260,13 +260,16 @@ void Matcher::run(const RqdData &data) {
   // Create the projections of the points, that is:
   // 1. Transform all the points to image space
   // 2. Save only the observations which have at least one point on the image
+  // 3. Save to currentCones_ the cones that do not appear in the image (behind the car)
   std::vector<Projection> projs;
+  currentCones_.clear();
+  currentCones_.reserve(observations.size());
   projections(observations, projs);
 
   // If debug, publish the images showing the projections (aka calibration)
   if (params_.debug) publishImage(projs, data.bbs);
 
-  // Now obtain the matches and save the cones
+  // Now obtain the matches and save the matched observations
   computeMatches(projs, *data.bbs);
 }
 

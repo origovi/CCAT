@@ -80,10 +80,10 @@ void Preproc::callback(const as_msgs::ObservationArray::ConstPtr &newObservation
                        const geometry_msgs::PoseArray::ConstPtr &rightDetections) {
   ROS_INFO("CALLBACK");
   tf::poseMsgToEigen(carPos->pose.pose, carTf_);
-  carTf_ = carTf_.inverse();
   // Invert y and z axis
-  // extrinsics_car_.translation().z() *= -1;
-  // extrinsics_car_.translation().y() *= -1;
+  // carTf_.translation().y() *= -1;
+  // carTf_.translation().z() *= -1;
+  carTf_ = carTf_.inverse();
 
   leftBbs_ = leftDetections;
   rightBbs_ = rightDetections;

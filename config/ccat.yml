@@ -32,6 +32,7 @@ matcher:
 tracker:
   debug:                      true
   same_cone_max_distSq:       0.09
+  fancy_markers:              false
   topics:
     output:
       markers_base_link:      "/AS/P/ccat/markers/base_link"

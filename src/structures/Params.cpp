@@ -48,6 +48,7 @@ Params::Params(const ros::NodeHandle &nh) {
   /* Tracker */
   nh.param<bool>("/AS/P/ccat/tracker/debug", tracker.debug, false);
   nh.param<double>("/AS/P/ccat/tracker/same_cone_max_distSq", tracker.same_cone_max_distSq, 0.09);
+  nh.param<bool>("/AS/P/ccat/tracker/fancy_markers", tracker.fancy_markers, false);
   nh.param<std::string>("/AS/P/ccat/tracker/topics/output/markers_base_link", tracker.topics.output.markersBaseLink, "/AS/P/ccat/markers/base_link");
   nh.param<std::string>("/AS/P/ccat/tracker/topics/output/markers_global", tracker.topics.output.markersGlobal, "/AS/P/ccat/markers/global");
 

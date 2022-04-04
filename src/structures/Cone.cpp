@@ -17,6 +17,8 @@ Cone::Cone(const Observation::Ptr &_observation, const double &_matchingDist) {
   matchingDist = _matchingDist;
 }
 
+
+
 /**
  * DESTRUCTORS
  */
@@ -26,6 +28,8 @@ Cone::~Cone() {}
 /**
  * PUBLIC METHODS
  */
+
+Cone::operator bool() const { return type != None; };
 
 void Cone::setTypeFromAsMsgs(const uint8_t &type) { this->type = static_cast<Type>(type); }
 

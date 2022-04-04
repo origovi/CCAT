@@ -84,11 +84,11 @@ class Matcher {
    * PRIVATE METHODS
    */
   static void copyPCLPtrVec(const std::vector<PCL::Ptr> &input, std::vector<PCL::Ptr> &output);
-  void projections(const std::vector<Observation::Ptr> &observations, std::vector<Projection> &projs) const;
+  void projections(const std::vector<Observation::Ptr> &observations, std::vector<Projection> &projs);
   void publishPCLs(const std::vector<Observation::Ptr> &observations) const;
   void publishImage(const std::vector<Projection> &projections,
                     const geometry_msgs::PoseArray::ConstPtr &bbs) const;
-  inline double bbHeightFromDist(const double &dist) const;
+  inline double bbHeightFromZ(const double &z) const;
   static Point bbCentroidAndHeight(const geometry_msgs::Pose &bb);
   void match(const size_t &bbInd, const geometry_msgs::PoseArray &bbs, const KDTree &projsKDT, std::vector<Match> &matches, std::vector<std::set<size_t>> &projsToExclude) const;
   void computeMatches(const std::vector<Projection> &projections, const geometry_msgs::PoseArray &bbs);
