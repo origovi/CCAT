@@ -51,7 +51,6 @@ class Preproc {
    * PUBLIC METHODS
    */
 
-  ~Preproc();
   /* Singleton pattern */
 
   static Preproc &getInstance();

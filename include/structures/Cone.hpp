@@ -15,9 +15,7 @@ class Cone {
    * CONSTRUCTORS AND DESTRUCTOR
    */
 
-  Cone();
-  Cone(const Observation::Ptr &_observation, const double &_matchingScore = CONE_DEFAULT_MATCH_DIST);
-  ~Cone();
+  Cone(const Observation::Ptr &_observation, const double &_matchingDist = CONE_DEFAULT_MATCH_DIST);
 
   /**
    * PUBLIC ATTRIBUTES
@@ -35,6 +33,7 @@ class Cone {
   // considerar treure la observacio
   Observation::Ptr observation;
   double matchingDist;
+  double distToCameraPlane;
 
   /**
    * PUBLIC METHODS

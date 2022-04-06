@@ -4,7 +4,6 @@
  * CONSTRUCTORS AND DESTRUCTOR
  */
 Merger::Merger() {}
-Merger::~Merger() {}
 
 /**
  * PRIVATE METHODS
@@ -33,7 +32,8 @@ void Merger::run(const std::vector<Cone> &conesLeft, const std::vector<Cone> &co
 
   // We know that two cones will be the same because they will have the same
   // observation-id, we only need to find those that have the same id.
-  // The Cone with a better (smaller) dist will prevail
+  // The Cone with a better (smaller) dist will prevail, all other metrics
+  // will be ignored.
   for (const Cone& cone : conesLeft) {
     auto it = projCones.find(cone.observation->id);
     if (it == projCones.end()) {
@@ -53,10 +53,10 @@ void Merger::run(const std::vector<Cone> &conesLeft, const std::vector<Cone> &co
     }
   }
 
-  currentCones_.resize(projCones.size());
-  size_t currConesInd = 0;
+  currentCones_.clear();
+  currentCones_.reserve(projCones.size());
   for (const auto &projConesPair : projCones) {
-    currentCones_[currConesInd++] = *projConesPair.second;
+    currentCones_.push_back(*projConesPair.second);
   }
 }
 

@@ -27,10 +27,6 @@ Observation::Observation(const std::list<const Observation*> &observationsToMean
   confidence /= observationsToMean.size();
 }
 
-/**
- * DESTRUCTORS
- */
-Observation::~Observation() {}
 
 /**
  * PROTECTED METHODS

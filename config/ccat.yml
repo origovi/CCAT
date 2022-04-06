@@ -11,17 +11,18 @@ common:
       cones:                  "/AS/P/ccat/cones"
 
 preproc:
-  cluster_dist:               0.5
+  cluster_dist:               0.5                                 # double (m)
 
 matcher:
   common:
-    debug:                    true
-    max_match_search_dist:    30.0
-    max_match_real_dist:      50.0
-    image_width:              1024
-    image_height:             768
-    cone_height:              0.325
-    cone_width:               0.228
+    debug:                    true                                # bool, enables debugging tools such as markers publishing
+    match_type:               "greedy"                            # string, ["greedy", "best fit"]
+    max_match_search_dist:    30.0                                # double (px)
+    max_match_real_dist:      50.0                                # double (m)
+    image_width:              1024                                # int (px)
+    image_height:             768                                 # int (px)
+    cone_height:              0.325                               # double (m)
+    cone_width:               0.228                               # double (m)
   topics:
     output:
       left_projected:         "/AS/P/ccat/projected/left"
@@ -31,7 +32,8 @@ matcher:
 
 tracker:
   debug:                      true
-  same_cone_max_distSq:       0.09
+  same_cone_max_distSq:       0.09                                # double (m²), if a new observation is less than sqrt(this)
+                                                                  # away from a cone, it will be assumed they are the same cone
   fancy_markers:              false
   topics:
     output:

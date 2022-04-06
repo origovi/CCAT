@@ -31,7 +31,6 @@ class Observation {
   Observation(const PCL::Ptr &pcl, const Point &centroid, const float &confidence, const size_t &id);
   Observation(const as_msgs::Observation &obs, const size_t &id);
   Observation(const std::list<const Observation*> &observationsToMean);
-  ~Observation();
 
   /* PUBLIC ATTRIBUTES */
 

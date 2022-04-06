@@ -4,7 +4,6 @@
  * CONSTRUCTORS AND DESTRUCTOR
  */
 Preproc::Preproc() : hasData_(false) {}
-Preproc::~Preproc() {}
 
 /**
  * PRIVATE METHODS

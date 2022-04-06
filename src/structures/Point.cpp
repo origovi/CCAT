@@ -12,11 +12,6 @@ template Point::Point<geometry_msgs::Point>(const geometry_msgs::Point &);
 template Point::Point<pcl::PointXYZI>(const pcl::PointXYZI &);
 
 /**
- * DESTRUCTORS
- */
-Point::~Point() {}
-
-/**
  * PRIVATE METHODS
  */
 

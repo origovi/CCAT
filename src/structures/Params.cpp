@@ -25,6 +25,7 @@ Params::Params(const ros::NodeHandle &nh) {
 
   // Common Part
   nh.param<bool>("/AS/P/ccat/matcher/common/debug", matcherL.debug, false);
+  nh.param<std::string>("/AS/P/ccat/matcher/common/match_type", matcherL.match_type, "greedy");
   nh.param<double>("/AS/P/ccat/matcher/common/max_match_search_dist", matcherL.max_match_search_dist, 50.0);
   nh.param<double>("/AS/P/ccat/matcher/common/max_match_real_dist", matcherL.max_match_real_dist, 50.0);
   nh.param<int>("/AS/P/ccat/matcher/common/image_width", matcherL.image_width, 1024);

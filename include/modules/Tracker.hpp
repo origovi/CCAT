@@ -44,7 +44,6 @@ class Tracker {
   void getTrackingPoints(std::vector<Point> &points, std::vector<Tracking*> &trackingPtrs);
 
  public:
-  ~Tracker();
 
   /**
    * PUBLIC METHODS

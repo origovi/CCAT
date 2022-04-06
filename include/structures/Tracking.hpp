@@ -1,8 +1,7 @@
 #ifndef TRACKING_HPP
 #define TRACKING_HPP
 
-#include <map>
-#include <deque>
+#include <algorithm>
 
 #include "as_msgs/Cone.h"
 #include "structures/Cone.hpp"
@@ -10,33 +9,25 @@
 
 class Tracking {
  private:
-  using Metric = typename std::pair<double, Cone::Type>;
   struct Consideration {
-    const Cone::Type type;
-    const double distToCar;
-    const double matchingDist;
-    Consideration(double distToCar, double matchingDist, const Cone::Type &type) : distToCar(distToCar), matchingDist(matchingDist), type (type) {}
+    Cone::Type type;
+    double heuristic;
+    Consideration(const Cone::Type &type, const double &heuristic) : type(type), heuristic(heuristic) {}
+    static bool comparer(const Consideration &c1, const Consideration &c2) {return c1.heuristic < c2.heuristic;}
   };
 
   Point position_;
   std::vector<Consideration> heap_;
 
-  bool valid_;
   Cone::Type type_;
-
-  Metric closestDist_, closestMatch_;
-  std::deque<Consideration> considerationsQ_;
-  std::map<Cone::Type, std::list<Consideration>> considerationsM_;
   
-  const uint8_t &getConeType();
-  
+  static double getHeuristic(const Cone &cone, const double &distSqToOldPos);
  public:
   /**
    * CONSTRUCTORS AND DESTRUCTOR
    */
 
   Tracking(const Cone &cone, const size_t &id);
-  ~Tracking();
 
   /**
    * PUBLIC ATTRIBUTES
@@ -52,7 +43,7 @@ class Tracking {
 
   /* Getters */
   const Point &position() const;
-  const as_msgs::Cone &getASCone(const Eigen::Affine3d &carTf);
+  as_msgs::Cone getASCone(const Eigen::Affine3d &carTf) const;
 };
 
 #endif  // TRACKING_HPP

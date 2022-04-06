@@ -5,3 +5,5 @@
 build/
 bin/
 CATKIN_IGNORE
+documentation/*
+!documentation/Doxyfile

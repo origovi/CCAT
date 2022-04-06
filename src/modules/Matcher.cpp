@@ -1,8 +1,20 @@
+/**
+ * @file Matcher.cpp
+ * @author Oriol Gorriz (oriol.gorriz@estudiantat.upc.edu)
+ * @brief It contains the specification of the Matcher module
+ * @version 1.0
+ * @date 2022-04-05
+ * 
+ * @copyright Copyright (c) 2022 BCN eMotorsport
+ * 
+ */
+
 #include "modules/Matcher.hpp"
 
-/**
- * PRIVATE METHODS
- */
+/* -------------------------------------------------------------------------- */
+/*                                   PRIVATE                                  */
+/* -------------------------------------------------------------------------- */
+
 void Matcher::copyPCLPtrVec(const std::vector<PCL::Ptr> &input, std::vector<PCL::Ptr> &output) {
   output.resize(input.size());
   for (size_t i = 0; i < input.size(); i++) {
@@ -66,7 +78,7 @@ void Matcher::publishPCLs(const std::vector<Observation::Ptr> &observations) con
 
 void Matcher::publishImage(const std::vector<Projection> &projections,
                            const geometry_msgs::PoseArray::ConstPtr &bbs) const {
-  cv::Mat image(params_.image_height, params_.image_width, CV_8UC3, cv::Scalar(255, 255, 255));
+  cv::Mat image(params_.image_height, params_.image_width, CV_8UC3, cv::Scalar(176, 176, 176));
 
   // Paint the bbs
   for (size_t i = 0; i < bbs->poses.size(); i++) {
@@ -94,23 +106,22 @@ void Matcher::publishImage(const std::vector<Projection> &projections,
 }
 
 double Matcher::bbHeightFromZ(const double &z) const {
-  return 0.0;
+  //return 0.0;
   // Eigen::Vector3f aux = intrinsics_ * Eigen::Vector3f(dist, 0.0, params_.cone_height);
   // return double(aux.y() / aux.z());
   Eigen::Vector3f top = intrinsics_ * Eigen::Vector3f(0.0, params_.cone_height, z);
   //std::cout << "Top: " << top.x() << " " << top.y() << " " << top.z() << std::endl;
   Eigen::Vector3f bottom = intrinsics_ * Eigen::Vector3f(0.0, 0.0, z);
   // std::cout << "Bottom: " << bottom.x() << " " << bottom.y() << " " << bottom.z() << std::endl;
-  return double((top.y() / top.z())-(bottom.y() / bottom.z()));
-
+  return double((top.y() / top.z()) - (bottom.y() / bottom.z()));
 }
 
 Point Matcher::bbCentroidAndHeight(const geometry_msgs::Pose &bb) {
-  //return Point((bb.orientation.x + bb.orientation.z) / 2, (bb.orientation.y + bb.orientation.w) / 2, abs(bb.position.y - bb.orientation.w));
-  return Point((bb.orientation.x + bb.orientation.z) / 2, (bb.orientation.y + bb.orientation.w) / 2, 0.0);
+  return Point((bb.orientation.x + bb.orientation.z) / 2, (bb.orientation.y + bb.orientation.w) / 2, abs(bb.orientation.y - bb.orientation.w));
+  //return Point((bb.orientation.x + bb.orientation.z) / 2, (bb.orientation.y + bb.orientation.w) / 2, 0.0);
 }
 
-void Matcher::match(const size_t &bbInd, const geometry_msgs::PoseArray &bbs, const KDTree &projsKDT, std::vector<Match> &matches, std::vector<std::set<size_t>> &projsToExclude) const {
+void Matcher::matchBestFit(const size_t &bbInd, const geometry_msgs::PoseArray &bbs, const KDTree &projsKDT, std::vector<Matching> &matches, std::vector<std::set<size_t>> &projsToExclude) const {
   Point bbCentroidAndHeightP(bbCentroidAndHeight(bbs.poses[bbInd]));
   bool isFirst = true;
   pointIndexV projPointInd;
@@ -118,7 +129,6 @@ void Matcher::match(const size_t &bbInd, const geometry_msgs::PoseArray &bbs, co
   double dist = Point::dist(bbCentroidAndHeightP, projPointInd->first);
 
   while (ros::ok() and (isFirst or dist >= matches[projPointInd->second].dist())) {
-
     // No matching is possible
     if (!bool(projPointInd) or dist > params_.max_match_search_dist) {
       return;
@@ -136,7 +146,7 @@ void Matcher::match(const size_t &bbInd, const geometry_msgs::PoseArray &bbs, co
       size_t bbIndToRematch = matches[projPointInd->second].bbInd();
       matches[projPointInd->second].unmatch();
 
-      match(bbIndToRematch, bbs, projsKDT, matches, projsToExclude);
+      matchBestFit(bbIndToRematch, bbs, projsKDT, matches, projsToExclude);
 
       // Update the new match AFTER the reassignment(s)
       matches[projPointInd->second].match(bbInd, dist);
@@ -153,24 +163,59 @@ void Matcher::match(const size_t &bbInd, const geometry_msgs::PoseArray &bbs, co
   }
 }
 
-void Matcher::computeMatches(const std::vector<Projection> &projections, const geometry_msgs::PoseArray &bbs) {
-  std::vector<Match> matches(projections.size());
-  std::vector<std::set<size_t>> projsToExclude(bbs.poses.size());
-  // Each Point will have X and Y (image coordinates) and the Z will be the
-  // height (in pixels) that the BB of the cone would have.
-  std::vector<Point> pointsToBuildTheKDTree;
-  pointsToBuildTheKDTree.reserve(projections.size());
-  for (const Projection &proj : projections) {
-    //double alcada = bbHeightFromZ(proj.observation->distToCar);
-    //std::cout << "alcada: " << alcada << std::endl;
-    //std::cout << "centroid: " << proj.observation->centroid << std::endl;
-    //std::cout << "imgCentroid: " << proj.imageCentroid.x << ", " << proj.imageCentroid.y << std::endl;
-    pointsToBuildTheKDTree.emplace_back(proj.imageCentroid.x, proj.imageCentroid.y, bbHeightFromZ(proj.observation->centroid_transformed.z));
+void Matcher::matchGreedy(const size_t &projInd, const std::vector<Projection> &projections, const KDTree &bbsKDT, std::vector<Matching> &matches) const {
+  Point projCentroidAndBbHeight(projections[projInd].imageCentroid.x, projections[projInd].imageCentroid.y, bbHeightFromZ(projections[projInd].observation->centroid_transformed.z));
+  pointIndexV bbPointInd(bbsKDT.nearest_pointIndex(projCentroidAndBbHeight));
+  double dist = Point::dist(projCentroidAndBbHeight, bbPointInd->first);
+  std::cout << "bb height: " << projCentroidAndBbHeight.z << " " << bbPointInd->first.z << std::endl;
+  // No matching is possible
+  if (!bool(bbPointInd) or dist > params_.max_match_search_dist) {
+    return;
   }
-  KDTree projsKDT(pointsToBuildTheKDTree);
 
-  for (size_t bbInd = 0; bbInd < bbs.poses.size(); bbInd++) {
-    match(bbInd, bbs, projsKDT, matches, projsToExclude);
+  // Match the projection with the bb
+  else {
+    matches[projInd].match(bbPointInd->second, dist);
+  }
+}
+
+void Matcher::computeMatches(const std::vector<Projection> &projections, const geometry_msgs::PoseArray &bbs) {
+  std::vector<Matching> matches(projections.size());
+
+  /* Two types of matching search */
+
+  // Best Fit search:
+  // We will match each bounding box to the closest (with a best fit),
+  // that means that each bounding box will be matched only once.
+  if (params_.match_type == "best fit") {
+    std::vector<std::set<size_t>> projsToExclude(bbs.poses.size());
+
+    std::vector<Point> pointsToBuildKDTree;
+    pointsToBuildKDTree.reserve(projections.size());
+    for (const Projection &proj : projections) {
+      pointsToBuildKDTree.emplace_back(proj.imageCentroid.x, proj.imageCentroid.y, bbHeightFromZ(proj.observation->centroid_transformed.z));
+    }
+    KDTree projsKDT(pointsToBuildKDTree);
+    for (size_t bbInd = 0; bbInd < bbs.poses.size(); bbInd++) {
+      matchBestFit(bbInd, bbs, projsKDT, matches, projsToExclude);
+    }
+  }
+
+  // Greedy search:
+  // We will match each projection to the closest bounding box
+  else {
+    // Each Point will have X and Y (image coordinates) and the Z will be the
+    // height (in pixels) that the BB of the cone would have.
+    std::vector<Point> pointsToBuildKDTree;
+    pointsToBuildKDTree.reserve(bbs.poses.size());
+    for (const geometry_msgs::Pose &bb : bbs.poses) {
+      pointsToBuildKDTree.push_back(bbCentroidAndHeight(bb));
+    }
+    KDTree bbsKDT(pointsToBuildKDTree);
+
+    for (size_t projInd = 0; projInd < projections.size(); projInd++) {
+      matchGreedy(projInd, projections, bbsKDT, matches);
+    }
   }
 
   // Create the cones:
@@ -182,23 +227,41 @@ void Matcher::computeMatches(const std::vector<Projection> &projections, const g
   for (size_t projInd = 0; projInd < matches.size(); projInd++) {
     // Create a cone from this observation giving it the matching distance
     currentCones_.emplace_back(projections[projInd].observation, matches[projInd].dist());
-    
+
     // If there is a match for this observation and it fulfills the conditions to classify the cone:
     // 1. The distance from the cone to the car is below a maximum
-    if (bool(matches[projInd]) and projections[projInd].observation->distToCar <= params_.max_match_real_dist) {
+    if (bool(matches[projInd])/* and projections[projInd].observation->distToCar <= params_.max_match_real_dist*/) {
       matches_num++;
       currentCones_.back().setTypeFromAsMsgs(bbs.poses[matches[projInd].bbInd()].position.x);
     }
   }
   std::cout << '[' << which << "]: Matchings Size: " << matches_num << std::endl;
+
+  // Calibrate this camera
+  if (!calibrated_) {
+    ccat::CalibReq req;
+    req.request.bbsCentroids.reserve(matches_num);
+    req.request.obsCentroids.reserve(matches_num);
+    for (size_t projInd = 0; projInd < matches.size(); projInd++) {
+      if (bool(matches[projInd])) {
+        req.request.obsCentroids.push_back(projections[projInd].observation->centroid_base_link.gmPoint());
+        req.request.bbsCentroids.push_back(bbCentroidAndHeight(bbs.poses[matches[projInd].bbInd()]).gmPoint());
+      }
+    }
+    if (calibSrv_.call(req)) {
+    } else {
+      ROS_ERROR("[ccat]: Failed to call Calibration Service");
+    }
+  }
 }
 
-/**
- * PUBLIC CONSTRUCTOR AND DESTRUCTOR
- */
+/* -------------------------------------------------------------------------- */
+/*                                   PUBLIC                                   */
+/* -------------------------------------------------------------------------- */
 
 Matcher::Matcher(const Params::Matcher &params, ros::NodeHandle *const &nh, const Which &which) : which(which), params_(params), intrinsics_(params.intrinsics.data()) {
-  nh_ = nh;
+  hasValidData_ = false;
+  calibrated_ = false;
 
   // Extrinsics
   Eigen::Quaterniond rotationQ(
@@ -208,19 +271,16 @@ Matcher::Matcher(const Params::Matcher &params, ros::NodeHandle *const &nh, cons
   extrinsics_.linear() = rotationQ.toRotationMatrix();
   extrinsics_.translation() = Eigen::Vector3d(params_.extrinsics.translation.data());
 
+  // Subscribers declaration
+  calibSrv_ = nh->serviceClient<ccat::CalibReq>("/AS/P/calibration");
+
   // Publishers declaration
-  image_transport::ImageTransport image_transport(*nh_);
-  if (params_.debug) projectedPub_ = image_transport.advertise(params_.topics.output.projected, 1);
-  if (params_.debug) pclPub_ = nh_->advertise<sensor_msgs::PointCloud2>(params_.topics.output.pcl, 1);
+  if (params_.debug) {
+    image_transport::ImageTransport image_transport(*nh);
+    projectedPub_ = image_transport.advertise(params_.topics.output.projected, 1);
+    pclPub_ = nh->advertise<sensor_msgs::PointCloud2>(params_.topics.output.pcl, 1);
+  }
 }
-
-Matcher::~Matcher() {}
-
-/**
- * PUBLIC METHODS
- */
-
-/* Callbacks */
 
 void Matcher::cfgCallback(const ccat::ExtrinsicsConfig &config, uint32_t level) {
   ROS_WARN("cfg callback");
@@ -231,9 +291,8 @@ void Matcher::cfgCallback(const ccat::ExtrinsicsConfig &config, uint32_t level) 
   extrinsics_.translation() = Eigen::Vector3d(config.x, config.y, config.z);
 }
 
-/* Functions */
-
 void Matcher::run(const RqdData &data) {
+  if (calibrated_) hasValidData_ = true;
   std::vector<Observation::Ptr> observations(data.observations.size());
   cvrs::obs2ObsPtr(data.observations, observations);
 
@@ -273,6 +332,6 @@ void Matcher::run(const RqdData &data) {
   computeMatches(projs, *data.bbs);
 }
 
-/* Getters */
-
 const std::vector<Cone> &Matcher::getData() const { return currentCones_; }
+
+const bool &Matcher::hasValidData() const { return hasValidData_; }

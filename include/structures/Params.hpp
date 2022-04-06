@@ -53,6 +53,7 @@ struct Params {
 
   struct Matcher {
     bool debug;
+    std::string match_type;
     double max_match_search_dist;
     double max_match_real_dist;
     int image_width, image_height;

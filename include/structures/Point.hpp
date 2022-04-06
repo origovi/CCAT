@@ -26,7 +26,6 @@ class Point {
   Point(const double &x, const double &y, const double &z);
   template<typename T>
   Point(const T &point);
-  ~Point();
 
   /**
    * PUBLIC ATTRIBUTES

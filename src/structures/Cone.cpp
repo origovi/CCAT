@@ -4,26 +4,14 @@
  * CONSTRUCTORS
  */
 
-Cone::Cone() {
-  type = None;
-  operation = ADD;
-  matchingDist = 1e10;
-}
 
 Cone::Cone(const Observation::Ptr &_observation, const double &_matchingDist) {
   observation = _observation;
   type = None;
   operation = ADD;
   matchingDist = _matchingDist;
+  distToCameraPlane = _observation->centroid_transformed.z;
 }
-
-
-
-/**
- * DESTRUCTORS
- */
-
-Cone::~Cone() {}
 
 /**
  * PUBLIC METHODS

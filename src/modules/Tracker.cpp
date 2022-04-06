@@ -7,7 +7,6 @@
 Tracker::Tracker() {
   lastId_ = 0;
 }
-Tracker::~Tracker() {}
 
 /**
  * PRIVATE METHODS
@@ -55,35 +54,35 @@ void Tracker::publishMarkers() const {
         mCommon.color.r = 1.0f;
         mCommon.color.g = 1.0f;
         mCommon.color.b = 0.0f;
-        if (params_.fancy_markers) mCommon.mesh_resource = "package://ccat/meshes/cone_yellow.dae";
+        if (params_.fancy_markers) mCommon.mesh_resource = "package://ccat/config/meshes/cone_yellow.dae";
         break;
 
       case 1:  // Blue
         mCommon.color.r = 0.0f;
         mCommon.color.g = 0.0f;
         mCommon.color.b = 1.0f;
-        if (params_.fancy_markers) mCommon.mesh_resource = "package://ccat/meshes/cone_blue.dae";
+        if (params_.fancy_markers) mCommon.mesh_resource = "package://ccat/config/meshes/cone_blue.dae";
         break;
 
       case 2:  // Small Orange
         mCommon.color.r = 1.0f;
         mCommon.color.g = 0.5f;
         mCommon.color.b = 0.0f;
-        if (params_.fancy_markers) mCommon.mesh_resource = "package://ccat/meshes/cone_orange.dae";
+        if (params_.fancy_markers) mCommon.mesh_resource = "package://ccat/config/meshes/cone_orange.dae";
         break;
 
       case 3:  // Big Orange
         mCommon.color.r = 1.0f;
         mCommon.color.g = 0.5f;
         mCommon.color.b = 0.0f;
-        if (params_.fancy_markers) mCommon.mesh_resource = "package://ccat/meshes/cone_orange_big.dae";
+        if (params_.fancy_markers) mCommon.mesh_resource = "package://ccat/config/meshes/cone_orange_big.dae";
         break;
 
       default:  // Unclassified
         mCommon.color.r = 0.5f;
         mCommon.color.g = 0.5f;
         mCommon.color.b = 0.5f;
-        if (params_.fancy_markers) mCommon.mesh_resource = "package://ccat/meshes/cone_gray.dae";
+        if (params_.fancy_markers) mCommon.mesh_resource = "package://ccat/config/meshes/cone_gray.dae";
         break;
     }
     visualization_msgs::Marker &mG = maGlobal.markers[i];
@@ -158,10 +157,10 @@ void Tracker::run(const std::vector<Cone> &cones, const Eigen::Affine3d &carTf) 
     for (size_t i = 0; i < cones.size(); i++) {
       const Point &pointToSearch = cones[i].observation->centroid_global;
       size_t nearestInd = *tucutu.nearest_index(pointToSearch);
-      double distSq = Point::distSq(points[nearestInd], pointToSearch);
+      double distSqToOldPos = Point::distSq(points[nearestInd], pointToSearch);
       // We have observed a known cone
-      if (distSq <= params_.same_cone_max_distSq) {
-        trackingPtrs[nearestInd]->addCone(cones[i], distSq);
+      if (distSqToOldPos <= params_.same_cone_max_distSq) {
+        trackingPtrs[nearestInd]->addCone(cones[i], distSqToOldPos);
       }
       // We have observed a new cone
       else {

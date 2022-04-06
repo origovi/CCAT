@@ -35,8 +35,6 @@ class Merger {
    * PUBLIC METHODS
    */
 
-  ~Merger();
-
   /* Singleton pattern */
 
   static Merger &getInstance();

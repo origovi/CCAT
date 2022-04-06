@@ -2,11 +2,23 @@ cmake_minimum_required(VERSION 3.0.2)
 project(ccat)
 
 add_compile_options(-std=c++14)
+set(CMAKE_BUILD_TYPE "Release")
 
 find_package(catkin REQUIRED COMPONENTS roscpp std_msgs as_msgs pcl_ros tf tf_conversions eigen_conversions image_transport cv_bridge dynamic_reconfigure)
 find_package(Eigen3 REQUIRED)
 
-generate_messages(DEPENDENCIES as_msgs)
+add_service_files(
+  FILES
+  CalibReq.srv
+)
+
+generate_messages(
+  DEPENDENCIES
+  as_msgs
+  std_msgs
+  geometry_msgs
+)
+
 
 generate_dynamic_reconfigure_options(
   cfg/Extrinsics.cfg
