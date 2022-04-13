@@ -34,10 +34,13 @@ void Matcher::projections(const std::vector<Observation::Ptr> &observations, std
     proj.projPoints.resize(observations[i]->pcl->size());
 
     for (size_t pInd = 0; pInd < observations[i]->pcl->size(); pInd++) {
-      // Transform point with camera intrinsics
-      Eigen::Vector3f transformedP(intrinsics_ * observations[i]->pcl->operator[](pInd).getVector3fMap());
-
       // Convert point to image coordinates (axis must be reassigned)
+      Eigen::Vector3f aux = observations[i]->pcl->operator[](pInd).getVector3fMap();
+      aux = Eigen::Vector3f(-aux.y(), -aux.z(), aux.x());
+      
+      // Transform point with camera intrinsics
+      Eigen::Vector3f transformedP(intrinsics_ * aux);
+      
       proj.projPoints[pInd].x = transformedP.x() / transformedP.z();
       proj.projPoints[pInd].y = transformedP.y() / transformedP.z();
 
@@ -53,9 +56,13 @@ void Matcher::projections(const std::vector<Observation::Ptr> &observations, std
     if (hasAnyPointInImage) {
       // 1. Transform the centroid of the pcl to image coords
       // 2. Push the projection to the result
-      Eigen::Vector3f imageCentroidVec(intrinsics_ * observations[i]->centroid_transformed.vec3f());
+      Eigen::Vector3f aux = observations[i]->centroid_transformed.vec3f();
+      aux = Eigen::Vector3f(-aux.y(), -aux.z(), aux.x());
+      Eigen::Vector3f imageCentroidVec(intrinsics_ * aux);
+    
       proj.imageCentroid.x = imageCentroidVec.x() / imageCentroidVec.z();
       proj.imageCentroid.y = imageCentroidVec.y() / imageCentroidVec.z();
+      
       projs.push_back(proj);
     } else {
       currentCones_.emplace_back(observations[i]);
@@ -164,7 +171,7 @@ void Matcher::matchBestFit(const size_t &bbInd, const geometry_msgs::PoseArray &
 }
 
 void Matcher::matchGreedy(const size_t &projInd, const std::vector<Projection> &projections, const KDTree &bbsKDT, std::vector<Matching> &matches) const {
-  Point projCentroidAndBbHeight(projections[projInd].imageCentroid.x, projections[projInd].imageCentroid.y, bbHeightFromZ(projections[projInd].observation->centroid_transformed.z));
+  Point projCentroidAndBbHeight(projections[projInd].imageCentroid.x, projections[projInd].imageCentroid.y, bbHeightFromZ(projections[projInd].observation->centroid_transformed.x));
   pointIndexV bbPointInd(bbsKDT.nearest_pointIndex(projCentroidAndBbHeight));
   double dist = Point::dist(projCentroidAndBbHeight, bbPointInd->first);
   std::cout << "bb height: " << projCentroidAndBbHeight.z << " " << bbPointInd->first.z << std::endl;
@@ -193,7 +200,7 @@ void Matcher::computeMatches(const std::vector<Projection> &projections, const g
     std::vector<Point> pointsToBuildKDTree;
     pointsToBuildKDTree.reserve(projections.size());
     for (const Projection &proj : projections) {
-      pointsToBuildKDTree.emplace_back(proj.imageCentroid.x, proj.imageCentroid.y, bbHeightFromZ(proj.observation->centroid_transformed.z));
+      pointsToBuildKDTree.emplace_back(proj.imageCentroid.x, proj.imageCentroid.y, bbHeightFromZ(proj.observation->centroid_transformed.x));
     }
     KDTree projsKDT(pointsToBuildKDTree);
     for (size_t bbInd = 0; bbInd < bbs.poses.size(); bbInd++) {
@@ -240,15 +247,47 @@ void Matcher::computeMatches(const std::vector<Projection> &projections, const g
   // Calibrate this camera
   if (!calibrated_) {
     ccat::CalibReq req;
+    req.request.euler_angles.resize(3);
+    Eigen::Vector3d::Map(&req.request.euler_angles[0], 3) = extrinsics_.rotation().eulerAngles(0, 1, 2);
+    req.request.translation.resize(3);
+    Eigen::Vector3d::Map(&req.request.translation[0], 3) = Eigen::Vector3d(extrinsics_.translation().col(0).head(3));
+    req.request.camera_matrix = std::vector<float>(intrinsics_.data(), intrinsics_.data() + intrinsics_.size());
     req.request.bbsCentroids.reserve(matches_num);
     req.request.obsCentroids.reserve(matches_num);
+    visualization_msgs::MarkerArray ma;
+    ma.markers.reserve(matches.size());
+    visualization_msgs::Marker m;
+    m.header.stamp = ros::Time::now();
+    m.header.frame_id = "map";
+    m.pose.orientation.w = 1.0;
+    m.type = visualization_msgs::Marker::CYLINDER;
+    m.scale.x = 1.0;
+    m.scale.y = 1.0;
+    m.scale.z = 1.0;
+    m.color.a = 1.0;
+    m.color.r = 1.0;
+    m.lifetime = ros::Duration(0.13);
+    int id = 0;
     for (size_t projInd = 0; projInd < matches.size(); projInd++) {
+      m.id = id++;
       if (bool(matches[projInd])) {
         req.request.obsCentroids.push_back(projections[projInd].observation->centroid_base_link.gmPoint());
         req.request.bbsCentroids.push_back(bbCentroidAndHeight(bbs.poses[matches[projInd].bbInd()]).gmPoint());
+        m.pose.position = projections[projInd].observation->centroid_base_link.gmPoint();
+        ma.markers.push_back(m);
       }
     }
+    nose_.publish(ma);
     if (calibSrv_.call(req)) {
+      // Udate the extrinsics
+      Eigen::Quaterniond rotationQ(
+        Eigen::AngleAxisd(req.response.euler_angles[0], Eigen::Vector3d::UnitX()) *
+        Eigen::AngleAxisd(req.response.euler_angles[1], Eigen::Vector3d::UnitY()) *
+        Eigen::AngleAxisd(req.response.euler_angles[2], Eigen::Vector3d::UnitZ()));
+      extrinsics_.linear() = rotationQ.toRotationMatrix();
+      extrinsics_.translation() = Eigen::Vector3d(req.response.translation.data());
+      //calibrated_ = true;
+      ROS_INFO("[ccat]: Matcher calibrated succesfully!");
     } else {
       ROS_ERROR("[ccat]: Failed to call Calibration Service");
     }
@@ -276,6 +315,8 @@ Matcher::Matcher(const Params::Matcher &params, ros::NodeHandle *const &nh, cons
 
   // Publishers declaration
   if (params_.debug) {
+    std::string noseCachopo = ((which == LEFT) ? "left" : "right");
+    nose_ = nh->advertise<visualization_msgs::MarkerArray>("/AS/P/ccat/nose/" + noseCachopo, 1);
     image_transport::ImageTransport image_transport(*nh);
     projectedPub_ = image_transport.advertise(params_.topics.output.projected, 1);
     pclPub_ = nh->advertise<sensor_msgs::PointCloud2>(params_.topics.output.pcl, 1);
@@ -306,7 +347,7 @@ void Matcher::run(const RqdData &data) {
   // are left. Here we are removing the points that have (z < 0.0).
   pcl::ConditionalRemoval<PCLPoint> zFilter;
   pcl::ConditionAnd<PCLPoint>::Ptr zFilterCond(pcl::make_shared<pcl::ConditionAnd<PCLPoint>>());
-  zFilterCond->addComparison(pcl::make_shared<pcl::FieldComparison<PCLPoint>>("z", pcl::ComparisonOps::GE, 0.0));
+  zFilterCond->addComparison(pcl::make_shared<pcl::FieldComparison<PCLPoint>>("x", pcl::ComparisonOps::GE, 0.0));
   zFilter.setCondition(zFilterCond);
   for (Observation::Ptr &obs : observations) {
     zFilter.setInputCloud(obs->pcl);

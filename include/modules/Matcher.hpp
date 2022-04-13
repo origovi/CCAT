@@ -38,6 +38,8 @@
 #include "structures/Observation.hpp"
 #include "structures/Params.hpp"
 #include "utilities/conversions.hpp"
+#include <visualization_msgs/MarkerArray.h>
+#include <visualization_msgs/Marker.h>
 
 using PCLPoint = pcl::PointXYZI;
 using PCL = pcl::PointCloud<PCLPoint>;
@@ -50,6 +52,7 @@ using Extrinsics = Eigen::Affine3d;
  */
 class Matcher {
  private:
+  ros::Publisher nose_;
   /* ---------------------------- Private Structs --------------------------- */
 
   /**

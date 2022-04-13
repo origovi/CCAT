@@ -5,7 +5,7 @@
  */
 
 Tracking::Tracking(const Cone &cone, const size_t &id) : id(id) {
-  heap_.reserve(100);
+  heap_.reserve(20);
   position_ = cone.observation->centroid_global;
   type_ = cone.type;
 }
@@ -28,7 +28,7 @@ void Tracking::addCone(const Cone &cone, const double &distSqToOldPos) {
   position_ = cone.observation->centroid_global;
   if (cone.type == Cone::None) return;
   double coneHeuristic = getHeuristic(cone, distSqToOldPos);
-  if (heap_.size() >= 100) {
+  if (heap_.size() >= 20) {
     
     // Find the element with min heuristic in the vector
     // and replace it if the heuristic is bigger.

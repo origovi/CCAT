@@ -9,8 +9,8 @@ Preproc::Preproc() : hasData_(false) {}
  * PRIVATE METHODS
  */
 
-std::list<const Observation*> Preproc::possiblesSamePoint(const size_t &pointIndex, const KDTree &observationsKDT, const std::vector<Observation> &allObs, std::vector<bool> &visited) const {
-  std::list<const Observation*> res;
+std::list<const Observation *> Preproc::possiblesSamePoint(const size_t &pointIndex, const KDTree &observationsKDT, const std::vector<Observation> &allObs, std::vector<bool> &visited) const {
+  std::list<const Observation *> res;
   res.push_back(&allObs[pointIndex]);
   std::vector<size_t> ar(observationsKDT.neighborhood_indices(allObs[pointIndex].centroid_global, params_.cluster_dist));
   for (const size_t &ind : ar) {
@@ -79,10 +79,16 @@ void Preproc::callback(const as_msgs::ObservationArray::ConstPtr &newObservation
                        const geometry_msgs::PoseArray::ConstPtr &rightDetections) {
   ROS_INFO("CALLBACK");
   tf::poseMsgToEigen(carPos->pose.pose, carTf_);
+  static const Eigen::Matrix4d aux = (Eigen::Matrix4d() << 1.0, 0.0, 0.0, 0.0,
+                                      0.0, -1.0, 0.0, 0.0,
+                                      0.0, 0.0, -1.0, 0.0,
+                                      0.0, 0.0, 0.0, 1.0)
+                                         .finished();
   // Invert y and z axis
   // carTf_.translation().y() *= -1;
   // carTf_.translation().z() *= -1;
   carTf_ = carTf_.inverse();
+  carTf_.matrix() = carTf_.matrix() * aux;
 
   leftBbs_ = leftDetections;
   rightBbs_ = rightDetections;

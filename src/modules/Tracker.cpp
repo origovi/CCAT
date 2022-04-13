@@ -171,6 +171,10 @@ void Tracker::run(const std::vector<Cone> &cones, const Eigen::Affine3d &carTf) 
   updateCurrentCones(carTf);
 }
 
+// void Tracker::accumulate(const std::vector<Observation> &obs) {
+
+// }
+
 /* Callbacks */
 
 /* Getters */

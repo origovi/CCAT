@@ -63,7 +63,7 @@ int main(int argc, char **argv) {
       merger.run(matcherL.getData(), matcherR.getData());
       tracker.run(merger.getData(), preproc.getCarTf());
       std::cout << std::endl;
-      preproc.reset();
+      //preproc.reset();
     }
     if (tracker.hasData()) conesPub.publish(tracker.getData());
     rate.sleep();

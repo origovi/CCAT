@@ -1,6 +1,9 @@
 # Old Extrinsics
-float64[3] translation
-float64[3] euler_angles
+float64[] translation
+float64[] euler_angles
+
+# Intrinsics
+float32[] camera_matrix
 
 # Matchings
 geometry_msgs/Point[] obsCentroids

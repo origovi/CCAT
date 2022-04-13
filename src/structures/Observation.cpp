@@ -12,8 +12,8 @@ Observation::Observation(const as_msgs::Observation &obs, const size_t &id) : pc
   pcl::fromROSMsg(obs.cloud, *pcl);
   // invert y and z axis
   for (auto &p : pcl->points) {
-    //p.y *= -1;
-    p.z *= -1;
+    p.y *= -1;
+    // p.z *= -1;
   }
 }
 
