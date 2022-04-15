@@ -37,15 +37,14 @@ class Visualization {
 
   ros::NodeHandle *const nh_;
 
-  DB<RosPub<sensor_msgs::PointCloud2>> pubPcl_;
-  DB<RosPub<visualization_msgs::MarkerArray>> pubMA_;
-  DB<RosPub<visualization_msgs::Marker>> pubM_;
-  DB<ImgPub> pubImg_;
-
+  static DB<RosPub<sensor_msgs::PointCloud2>> pubPcl_;
+  static DB<RosPub<visualization_msgs::MarkerArray>> pubMA_;
+  static DB<RosPub<visualization_msgs::Marker>> pubM_;
+  static DB<ImgPub> pubImg_;
 
  protected:
   Visualization(ros::NodeHandle *const nh);
-  
+
   ros::Publisher &pubPcl(const std::string &topic, const size_t &defQueueSize = 1);
   ros::Publisher &pubMA(const std::string &topic, const size_t &defQueueSize = 1);
   ros::Publisher &pubM(const std::string &topic, const size_t &defQueueSize = 1);

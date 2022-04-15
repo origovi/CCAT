@@ -37,10 +37,10 @@ void Matcher::projections(const std::vector<Observation::Ptr> &observations, std
       // Convert point to image coordinates (axis must be reassigned)
       Eigen::Vector3f aux = observations[i]->pcl->operator[](pInd).getVector3fMap();
       aux = Eigen::Vector3f(-aux.y(), -aux.z(), aux.x());
-      
+
       // Transform point with camera intrinsics
       Eigen::Vector3f transformedP(intrinsics_ * aux);
-      
+
       proj.projPoints[pInd].x = transformedP.x() / transformedP.z();
       proj.projPoints[pInd].y = transformedP.y() / transformedP.z();
 
@@ -59,57 +59,14 @@ void Matcher::projections(const std::vector<Observation::Ptr> &observations, std
       Eigen::Vector3f aux = observations[i]->centroid_transformed.vec3f();
       aux = Eigen::Vector3f(-aux.y(), -aux.z(), aux.x());
       Eigen::Vector3f imageCentroidVec(intrinsics_ * aux);
-    
+
       proj.imageCentroid.x = imageCentroidVec.x() / imageCentroidVec.z();
       proj.imageCentroid.y = imageCentroidVec.y() / imageCentroidVec.z();
-      
+
       projs.push_back(proj);
-    } else {
-      currentCones_.emplace_back(observations[i]);
     }
   }
   std::cout << '[' << which << "]: Projs Size: " << projs.size() << std::endl;
-}
-
-void Matcher::publishPCLs(const std::vector<Observation::Ptr> &observations) const {
-  PCL pclToPaint;
-  for (const Observation::Ptr &obs : observations) {
-    pclToPaint += *obs->pcl;
-  }
-  sensor_msgs::PointCloud2 pcl;
-  pcl::toROSMsg(pclToPaint, pcl);
-  pcl.header.frame_id = "map";
-  pcl.header.stamp = ros::Time::now();
-  pclPub_.publish(pcl);
-}
-
-void Matcher::publishImage(const std::vector<Projection> &projections,
-                           const geometry_msgs::PoseArray::ConstPtr &bbs) const {
-  cv::Mat image(params_.image_height, params_.image_width, CV_8UC3, cv::Scalar(176, 176, 176));
-
-  // Paint the bbs
-  for (size_t i = 0; i < bbs->poses.size(); i++) {
-    cv::Point2d pt1(bbs->poses[i].orientation.x, bbs->poses[i].orientation.y);
-    cv::Point2d pt2(bbs->poses[i].orientation.z, bbs->poses[i].orientation.w);
-    if (bbs->poses[i].position.x == 0)
-      cv::rectangle(image, pt1, pt2, cv::Scalar(50, 255, 255), 2, 8, 0);
-    else if (bbs->poses[i].position.x == 1)
-      cv::rectangle(image, pt1, pt2, cv::Scalar(255, 0, 0), 2, 8, 0);
-    else
-      cv::rectangle(image, pt1, pt2, cv::Scalar(0, 145, 255), 2, 8, 0);
-  }
-
-  // Paint the points
-  for (const Projection &proj : projections) {
-    for (const cv::Point2d &p : proj.projPoints) {
-      cv::circle(image, p, 2, CV_RGB(255, 0, 0), -1);
-    }
-    cv::circle(image, proj.imageCentroid, 4, CV_RGB(0, 255, 0), -1);
-  }
-
-  // The timestamp will be taken from the bbs message header
-  sensor_msgs::ImagePtr msg = cv_bridge::CvImage(bbs->header, "bgr8", image).toImageMsg();
-  projectedPub_.publish(msg);
 }
 
 double Matcher::bbHeightFromZ(const double &z) const {
@@ -186,8 +143,8 @@ void Matcher::matchGreedy(const size_t &projInd, const std::vector<Projection> &
   }
 }
 
-void Matcher::computeMatches(const std::vector<Projection> &projections, const geometry_msgs::PoseArray &bbs) {
-  std::vector<Matching> matches(projections.size());
+void Matcher::computeMatchings(const std::vector<Projection> &projections, const geometry_msgs::PoseArray &bbs, std::vector<Matching> &matchings) {
+  matchings.resize(projections.size());
 
   /* Two types of matching search */
 
@@ -204,7 +161,7 @@ void Matcher::computeMatches(const std::vector<Projection> &projections, const g
     }
     KDTree projsKDT(pointsToBuildKDTree);
     for (size_t bbInd = 0; bbInd < bbs.poses.size(); bbInd++) {
-      matchBestFit(bbInd, bbs, projsKDT, matches, projsToExclude);
+      matchBestFit(bbInd, bbs, projsKDT, matchings, projsToExclude);
     }
   }
 
@@ -221,7 +178,7 @@ void Matcher::computeMatches(const std::vector<Projection> &projections, const g
     KDTree bbsKDT(pointsToBuildKDTree);
 
     for (size_t projInd = 0; projInd < projections.size(); projInd++) {
-      matchGreedy(projInd, projections, bbsKDT, matches);
+      matchGreedy(projInd, projections, bbsKDT, matchings);
     }
   }
 
@@ -230,67 +187,68 @@ void Matcher::computeMatches(const std::vector<Projection> &projections, const g
   // 2. The Cone will have the type of the BB that it's matched to
   // 3. TODO: if any Observation is very close and does not have a match,
   //    delete it
-  size_t matches_num = 0;
-  for (size_t projInd = 0; projInd < matches.size(); projInd++) {
+  size_t matchings_num = 0;
+
+  for (size_t projInd = 0; projInd < matchings.size(); projInd++) {
     // Create a cone from this observation giving it the matching distance
-    currentCones_.emplace_back(projections[projInd].observation, matches[projInd].dist());
+    currentCones_.emplace_back(projections[projInd].observation, matchings[projInd].dist());
 
     // If there is a match for this observation and it fulfills the conditions to classify the cone:
     // 1. The distance from the cone to the car is below a maximum
-    if (bool(matches[projInd])/* and projections[projInd].observation->distToCar <= params_.max_match_real_dist*/) {
-      matches_num++;
-      currentCones_.back().setTypeFromAsMsgs(bbs.poses[matches[projInd].bbInd()].position.x);
+    if (bool(matchings[projInd]) /* and projections[projInd].observation->distToCar <= params_.max_match_real_dist*/) {
+      matchings_num++;
+      currentCones_.back().setTypeFromAsMsgs(bbs.poses[matchings[projInd].bbInd()].position.x);
     }
   }
-  std::cout << '[' << which << "]: Matchings Size: " << matches_num << std::endl;
+  std::cout << '[' << which << "]: Matchings Size: " << matchings_num << std::endl;
+}
 
-  // Calibrate this camera
-  if (!calibrated_) {
-    ccat::CalibReq req;
-    req.request.euler_angles.resize(3);
-    Eigen::Vector3d::Map(&req.request.euler_angles[0], 3) = extrinsics_.rotation().eulerAngles(0, 1, 2);
-    req.request.translation.resize(3);
-    Eigen::Vector3d::Map(&req.request.translation[0], 3) = Eigen::Vector3d(extrinsics_.translation().col(0).head(3));
-    req.request.camera_matrix = std::vector<float>(intrinsics_.data(), intrinsics_.data() + intrinsics_.size());
-    req.request.bbsCentroids.reserve(matches_num);
-    req.request.obsCentroids.reserve(matches_num);
-    visualization_msgs::MarkerArray ma;
-    ma.markers.reserve(matches.size());
-    visualization_msgs::Marker m;
-    m.header.stamp = ros::Time::now();
-    m.header.frame_id = "map";
-    m.pose.orientation.w = 1.0;
-    m.type = visualization_msgs::Marker::CYLINDER;
-    m.scale.x = 1.0;
-    m.scale.y = 1.0;
-    m.scale.z = 1.0;
-    m.color.a = 1.0;
-    m.color.r = 1.0;
-    m.lifetime = ros::Duration(0.13);
-    int id = 0;
-    for (size_t projInd = 0; projInd < matches.size(); projInd++) {
-      m.id = id++;
-      if (bool(matches[projInd])) {
-        req.request.obsCentroids.push_back(projections[projInd].observation->centroid_base_link.gmPoint());
-        req.request.bbsCentroids.push_back(bbCentroidAndHeight(bbs.poses[matches[projInd].bbInd()]).gmPoint());
-        m.pose.position = projections[projInd].observation->centroid_base_link.gmPoint();
-        ma.markers.push_back(m);
-      }
+void Matcher::updateData(const std::vector<Projection> &projections, const geometry_msgs::PoseArray &bbs, const std::vector<Matching> &matchings) {
+  currentCones_.clear();
+  currentCones_.reserve(matchings.size());
+  for (size_t i = 0; i < matchings.size(); i++) {
+    if (bool(matchings[i])) {
+      currentCones_.emplace_back(projections[i].observation);
+      currentCones_.back().setTypeFromAsMsgs(bbs.poses[matchings[i].bbInd()].position.x);
+    } else {
+      currentCones_.emplace_back(projections[i].observation);
     }
-    nose_.publish(ma);
-    if (calibSrv_.call(req)) {
-      // Udate the extrinsics
-      Eigen::Quaterniond rotationQ(
+  }
+}
+
+void Matcher::autocalib(const std::vector<Projection> &projections, const geometry_msgs::PoseArray &bbs, const std::vector<Matching> &matchings) {
+  // Fill the request parameters
+  ccat::CalibReq req;
+  req.request.euler_angles.resize(3);
+  Eigen::Vector3d::Map(&req.request.euler_angles[0], 3) = extrinsics_.rotation().eulerAngles(0, 1, 2);
+  req.request.translation.resize(3);
+  Eigen::Vector3d::Map(&req.request.translation[0], 3) = Eigen::Vector3d(extrinsics_.translation().col(0).head(3));
+  req.request.camera_matrix = std::vector<float>(intrinsics_.data(), intrinsics_.data() + intrinsics_.size());
+  req.request.bbsCentroids.reserve(matchings.size());
+  req.request.obsCentroids.reserve(matchings.size());
+  for (size_t projInd = 0; projInd < matchings.size(); projInd++) {
+    if (bool(matchings[projInd])) {
+      req.request.obsCentroids.push_back(projections[projInd].observation->centroid_base_link.gmPoint());
+      req.request.bbsCentroids.push_back(bbCentroidAndHeight(bbs.poses[matchings[projInd].bbInd()]).gmPoint());
+    }
+  }
+  req.request.bbsCentroids.shrink_to_fit();
+  req.request.obsCentroids.shrink_to_fit();
+
+  // Call the calibration service
+  if (calibSrv_.call(req)) {
+    // Update the extrinsics
+    Eigen::Quaterniond rotationQ(
         Eigen::AngleAxisd(req.response.euler_angles[0], Eigen::Vector3d::UnitX()) *
         Eigen::AngleAxisd(req.response.euler_angles[1], Eigen::Vector3d::UnitY()) *
         Eigen::AngleAxisd(req.response.euler_angles[2], Eigen::Vector3d::UnitZ()));
-      extrinsics_.linear() = rotationQ.toRotationMatrix();
-      extrinsics_.translation() = Eigen::Vector3d(req.response.translation.data());
-      //calibrated_ = true;
-      ROS_INFO("[ccat]: Matcher calibrated succesfully!");
-    } else {
-      ROS_ERROR("[ccat]: Failed to call Calibration Service");
-    }
+    extrinsics_.linear() = rotationQ.toRotationMatrix();
+    extrinsics_.translation() = Eigen::Vector3d(req.response.translation.data());
+    //calibrated_ = true;
+    ROS_INFO_STREAM("prova");
+    ROS_INFO("[ccat]: Matcher calibrated succesfully!");
+  } else {
+    ROS_ERROR("[ccat]: Failed to call Calibration Service");
   }
 }
 
@@ -298,7 +256,7 @@ void Matcher::computeMatches(const std::vector<Projection> &projections, const g
 /*                                   PUBLIC                                   */
 /* -------------------------------------------------------------------------- */
 
-Matcher::Matcher(const Params::Matcher &params, ros::NodeHandle *const &nh, const Which &which) : which(which), params_(params), intrinsics_(params.intrinsics.data()) {
+Matcher::Matcher(const Params::Matcher &params, ros::NodeHandle *const &nh, const Which &which) : which(which), params_(params), intrinsics_(params.intrinsics.data()), vis_(nh, params) {
   hasValidData_ = false;
   calibrated_ = false;
 
@@ -311,16 +269,7 @@ Matcher::Matcher(const Params::Matcher &params, ros::NodeHandle *const &nh, cons
   extrinsics_.translation() = Eigen::Vector3d(params_.extrinsics.translation.data());
 
   // Subscribers declaration
-  calibSrv_ = nh->serviceClient<ccat::CalibReq>("/AS/P/calibration");
-
-  // Publishers declaration
-  if (params_.debug) {
-    std::string noseCachopo = ((which == LEFT) ? "left" : "right");
-    nose_ = nh->advertise<visualization_msgs::MarkerArray>("/AS/P/ccat/nose/" + noseCachopo, 1);
-    image_transport::ImageTransport image_transport(*nh);
-    projectedPub_ = image_transport.advertise(params_.topics.output.projected, 1);
-    pclPub_ = nh->advertise<sensor_msgs::PointCloud2>(params_.topics.output.pcl, 1);
-  }
+  calibSrv_ = nh->serviceClient<ccat::CalibReq>(params_.service_addr);
 }
 
 void Matcher::cfgCallback(const ccat::ExtrinsicsConfig &config, uint32_t level) {
@@ -334,43 +283,66 @@ void Matcher::cfgCallback(const ccat::ExtrinsicsConfig &config, uint32_t level) 
 
 void Matcher::run(const RqdData &data) {
   if (calibrated_) hasValidData_ = true;
+
+  // 0: Copy the observations to a vector because the points will be transformed
+  // using the always changing car position.
   std::vector<Observation::Ptr> observations(data.observations.size());
   cvrs::obs2ObsPtr(data.observations, observations);
 
-  // Transform the observations (pcls AND centroid) to camera space
+  // 1: Transform the observations (pcls AND centroid) to camera space.
   for (Observation::Ptr &obs : observations) {
     pcl::transformPointCloud(*obs->pcl, *obs->pcl, extrinsics_);
     obs->centroid_transformed = obs->centroid_base_link.transformed(extrinsics_);
   }
 
-  // Filter the points so only the points in front of the camera (visibles)
+  // 2: Filter the points so only the points in front of the camera (visibles)
   // are left. Here we are removing the points that have (z < 0.0).
-  pcl::ConditionalRemoval<PCLPoint> zFilter;
-  pcl::ConditionAnd<PCLPoint>::Ptr zFilterCond(pcl::make_shared<pcl::ConditionAnd<PCLPoint>>());
-  zFilterCond->addComparison(pcl::make_shared<pcl::FieldComparison<PCLPoint>>("x", pcl::ComparisonOps::GE, 0.0));
-  zFilter.setCondition(zFilterCond);
+  pcl::ConditionalRemoval<PCLPoint> xFilter;
+  pcl::ConditionAnd<PCLPoint>::Ptr xFilterCond(pcl::make_shared<pcl::ConditionAnd<PCLPoint>>());
+  xFilterCond->addComparison(pcl::make_shared<pcl::FieldComparison<PCLPoint>>("x", pcl::ComparisonOps::GE, 0.0));
+  xFilter.setCondition(xFilterCond);
   for (Observation::Ptr &obs : observations) {
-    zFilter.setInputCloud(obs->pcl);
-    zFilter.filter(*obs->pcl);
+    xFilter.setInputCloud(obs->pcl);
+    xFilter.filter(*obs->pcl);
   }
 
   // If debug, publish all the cones in camera coordinates
-  if (params_.debug) publishPCLs(observations);
+  if (params_.debug)
+    vis_.publishPCLs(observations);
 
-  // Create the projections of the points, that is:
-  // 1. Transform all the points to image space
-  // 2. Save only the observations which have at least one point on the image
-  // 3. Save to currentCones_ the cones that do not appear in the image (behind the car)
+  // 3: Create the projections of the points, that is:
+  // - Transform all the points to image space
+  // - Save only the observations which have at least one point on the image
+  // - Save to currentCones_ the cones that do not appear in the image (behind the car)
   std::vector<Projection> projs;
   currentCones_.clear();
   currentCones_.reserve(observations.size());
   projections(observations, projs);
 
-  // If debug, publish the images showing the projections (aka calibration)
-  if (params_.debug) publishImage(projs, data.bbs);
+  // 4: Now obtain the matches
+  std::vector<Matching> matchings;
+  computeMatchings(projs, *data.bbs, matchings);
 
-  // Now obtain the matches and save the matched observations
-  computeMatches(projs, *data.bbs);
+  // If debug:
+  // - publish the images showing the projections (aka calibration)
+  // - publish markers showing the actual matchings
+  if (params_.debug) {
+    std::vector<std::pair<std::vector<cv::Point2d>, cv::Point2d>> projsToPaint(projs.size());
+    std::transform(projs.begin(), projs.end(), projsToPaint.begin(),
+                   [](const Projection &p) -> std::pair<std::vector<cv::Point2d>, cv::Point2d> { return {p.projPoints, p.imageCentroid}; });
+    vis_.publishProjectedImg(projsToPaint, *data.bbs, matchings);
+    
+    std::vector<geometry_msgs::Point> projsCentroids(projs.size());
+    std::transform(projs.begin(), projs.end(), projsCentroids.begin(),
+                   [](const Projection &p) -> geometry_msgs::Point { return p.observation->centroid_base_link.gmPoint(); });
+    vis_.publishMatchingMarkers(projsCentroids, *data.bbs, matchings);
+  }
+
+  // 5: Update the cones data
+  updateData(projs, *data.bbs, matchings);
+
+  // 6: Autocalibrate
+  autocalib(projs, *data.bbs, matchings);
 }
 
 const std::vector<Cone> &Matcher::getData() const { return currentCones_; }

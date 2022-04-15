@@ -17,18 +17,22 @@ matcher:
   common:
     debug:                    true                                # bool, enables debugging tools such as markers publishing
     match_type:               "best fit"                            # string, ["greedy", "best fit"]
-    max_match_search_dist:    100.0                                # double (px)
+    max_match_search_dist:    100.0                               # double (px)
     max_match_real_dist:      50.0                                # double (m)
     image_width:              1024                                # int (px)
     image_height:             768                                 # int (px)
     cone_height:              0.325                               # double (m)
     cone_width:               0.228                               # double (m)
+    colors_in_projected:      true                                # bool, the color of the cone points and the BB(s) will be the same in a matching
+    service_addr:             "/AS/P/calibration"
   topics:
     output:
       left_projected:         "/AS/P/ccat/projected/left"
       right_projected:        "/AS/P/ccat/projected/right"
       left_pcl:               "/AS/P/ccat/pcl/left"
       right_pcl:              "/AS/P/ccat/pcl/right"
+      left_matched_markers:   "/AS/P/ccat/markers/matchings/left"
+      right_matched_markers:   "/AS/P/ccat/markers/matchings/right"
 
 tracker:
   debug:                      true

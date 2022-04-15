@@ -9,11 +9,11 @@
  * 
  */
 
-#ifndef MATCHER_HPP
-#define MATCHER_HPP
+#ifndef MODULES_MATCHER_MATCHER_HPP
+#define MODULES_MATCHER_MATCHER_HPP
 
-#include <ccat/ExtrinsicsConfig.h>
 #include <ccat/CalibReq.h>
+#include <ccat/ExtrinsicsConfig.h>
 #include <cv_bridge/cv_bridge.h>
 #include <eigen_conversions/eigen_msg.h>
 #include <geometry_msgs/PoseArray.h>
@@ -27,19 +27,21 @@
 #include <sensor_msgs/PointCloud2.h>
 #include <tf/tf.h>
 #include <tf_conversions/tf_eigen.h>
+#include <visualization_msgs/Marker.h>
+#include <visualization_msgs/MarkerArray.h>
 
 #include <cmath>
 #include <iostream>
 #include <set>
 #include <vector>
 
+#include "modules/Matcher/MatcherVis.hpp"
+#include "modules/Matcher/Matching.hpp"
 #include "structures/Cone.hpp"
 #include "structures/KDTree.hpp"
 #include "structures/Observation.hpp"
 #include "structures/Params.hpp"
 #include "utilities/conversions.hpp"
-#include <visualization_msgs/MarkerArray.h>
-#include <visualization_msgs/Marker.h>
 
 using PCLPoint = pcl::PointXYZI;
 using PCL = pcl::PointCloud<PCLPoint>;
@@ -51,9 +53,19 @@ using Extrinsics = Eigen::Affine3d;
  * 
  */
 class Matcher {
- private:
-  ros::Publisher nose_;
-  /* ---------------------------- Private Structs --------------------------- */
+ public:
+  /* ---------------------------- Public Structs ---------------------------- */
+
+  enum Which { LEFT,
+               RIGHT };
+
+  /**
+   * @brief Encapsulates the data needed to run the Matcher pipeline.
+   */
+  struct RqdData {
+    std::vector<Observation> observations;
+    geometry_msgs::PoseArray::ConstPtr bbs;
+  };
 
   /**
    * @brief Represents a projected Observation, it contains:
@@ -78,73 +90,7 @@ class Matcher {
     cv::Point2d imageCentroid;
   };
 
-  /**
-   * @brief Represents a Matching between a bounding box and an Observation.
-   * 
-   * Usually in a vector of Matching(s), element \a i specifies that
-   * Observation \a i is matching to the BB with index = \a bbInd_.
-   */
-  struct Matching {
-   private:
-    /**
-    * @brief Whether or not this match is valid. Initialized to false.
-    */
-    bool valid_ = false;
-
-    /**
-     * @brief The BB index this Observation is matched to.
-     */
-    size_t bbInd_;
-
-    /**
-     * @brief The matching distance between the BB and the Observation.
-     */
-    double dist_;
-
-   public:
-    /**
-    * @brief Getter to know if the matching is valid or not.
-    * 
-    * @return true if the matching is valid.
-    * @return false if the matching is not valid.
-    */
-    explicit operator bool() const { return valid_; }
-
-    /**
-     * @brief Match the implicit object to the BB with index \a bbInd and with
-     * a matching distance \a dist.
-     * 
-     * @param bbInd Index of the BB
-     * @param dist Matching distance
-     */
-    void match(size_t bbInd, double dist) {
-      valid_ = true;
-      bbInd_ = bbInd;
-      dist_ = dist;
-    }
-
-    /**
-     * @brief Invalidates the matching.
-     */
-    void unmatch() { valid_ = false; }
-
-    /**
-     * @brief Getter for \a bbInd_.
-     * 
-     * @return The index of the matched BB.
-     * note: if not \a valid_, the result of this method is invalid as well.
-     */
-    const size_t &bbInd() const { return bbInd_; }
-
-    /**
-     * @brief Getter for \a dist_.
-     * 
-     * @return The matching distance between the implicit object and
-     * the BB with index = \a bbInd_.
-     * note: if not \a valid_, the result of this method is invalid as well.
-     */
-    const double &dist() const { return dist_; }
-  };
+ private:
 
   /* -------------------------- Private Attributes -------------------------- */
 
@@ -155,13 +101,11 @@ class Matcher {
 
   /**
    * @brief Specifies if the currentCones_ attribute data is valid or not.
-   * 
    */
   bool hasValidData_;
 
   /**
    * @brief Specifies if the implicit camera is well calibrated.
-   * 
    */
   bool calibrated_;
 
@@ -185,28 +129,20 @@ class Matcher {
   const Intrinsics intrinsics_;
 
   /* -------------------------- Private Subscribers ------------------------- */
-  
+
   /**
    * @brief The service that will allow this camera to be calibrated;
    * will return the calibrated extrinsics.
-   * 
    */
   ros::ServiceClient calibSrv_;
 
-  /* -------------------------- Private Publishers -------------------------- */
+  /* ------------------------- Matcher Visualization ------------------------ */
 
   /**
-   * @brief Publisher used to advertise the projected Observations of the
-   * implicit camera.
+   * @brief The Visualization object for the Matcher, it will allow us to
+   * publish all debug messages.
    */
-  image_transport::Publisher projectedPub_;
-
-  /**
-   * @brief Publisher used to advertise the transformed pointcloud
-   * in camera space. For debug purposes only.
-   * 
-   */
-  ros::Publisher pclPub_;
+  MatcherVis vis_;
 
   /* ---------------------------- Private Methods --------------------------- */
 
@@ -243,12 +179,12 @@ class Matcher {
    * @param[in] bbInd The index of the BB it is gonna find a matching for
    * @param[in] bbs An array of all BB(s)
    * @param[in] projsKDT A KDTree of every Matcher::Projection in the image
-   * @param[out] matches A vector of Matcher::Matching
+   * @param[out] matches A vector of Matching(s)
    * @param[out] projsToExclude For each BB, all the Matcher::Projection(s)
    * it cannot be matched to
    */
   void matchBestFit(const size_t &bbInd, const geometry_msgs::PoseArray &bbs, const KDTree &projsKDT, std::vector<Matching> &matches, std::vector<std::set<size_t>> &projsToExclude) const;
-  
+
   /**
    * @brief Matches the Matcher::Projection with index = \a projInd with the
    * closest BB, that means that each BB can be matched more than once.
@@ -258,10 +194,10 @@ class Matcher {
    * matching for
    * @param[in] projections A vector of all Matcher::Projection(s)
    * @param[in] bbsKDT A KDTree of every BB in the image
-   * @param[out] matches A vector of Matcher::Matching
+   * @param[out] matches A vector of Matching(s)
    */
   void matchGreedy(const size_t &projInd, const std::vector<Projection> &projections, const KDTree &bbsKDT, std::vector<Matching> &matches) const;
-  
+
   /**
    * @brief Computes all the matchings, from the Matcher::Projections that are
    * in front of the camera and all the BB(s).
@@ -270,26 +206,11 @@ class Matcher {
    * @param[in] projections All the Matcher::Projections
    * @param[in] bbs All the BB(s)
    */
-  void computeMatches(const std::vector<Projection> &projections, const geometry_msgs::PoseArray &bbs);
-  
-  /**
-   * @brief For debug purposes, it publishes the PCL(s) corresponding to all
-   * Observation(s) in camera space. The result will be published as a
-   * sensor_msgs::PointCloud2.
-   * 
-   * @param observations All the Observation(s)
-   */
-  void publishPCLs(const std::vector<Observation::Ptr> &observations) const;
+  void computeMatchings(const std::vector<Projection> &projections, const geometry_msgs::PoseArray &bbs, std::vector<Matching> &matchings);
 
-  /**
-   * @brief For debug purposes, it publishes the projected image of all the
-   * Observation(s) that the camera sees with its corresponding centroid AND
-   * all the BB(s).
-   * 
-   * @param projections 
-   * @param bbs 
-   */
-  void publishImage(const std::vector<Projection> &projections, const geometry_msgs::PoseArray::ConstPtr &bbs) const;
+  void updateData(const std::vector<Projection> &projections, const geometry_msgs::PoseArray &bbs, const std::vector<Matching> &matchings);
+  
+  void autocalib(const std::vector<Projection> &projections, const geometry_msgs::PoseArray &bbs, const std::vector<Matching> &matchings);
 
   /**
    * @brief It deep copies a vector of pcl::shared_ptr to pcl::PointCloud.
@@ -312,20 +233,6 @@ class Matcher {
   static Point bbCentroidAndHeight(const geometry_msgs::Pose &bb);
 
  public:
-  /* ---------------------------- Public Structs ---------------------------- */
-
-  enum Which { LEFT,
-               RIGHT };
-
-  /**
-   * @brief Encapsulates the data needed to run the Matcher pipeline.
-   * 
-   */
-  struct RqdData {
-    std::vector<Observation> observations;
-    geometry_msgs::PoseArray::ConstPtr bbs;
-  };
-
   /* --------------------------- Public Constructor -------------------------- */
 
   /**
@@ -383,4 +290,4 @@ class Matcher {
   const bool &hasValidData() const;
 };
 
-#endif  // MATCHER_HPP
+#endif  // MODULES_MATCHER_MATCHER_HPP

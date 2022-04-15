@@ -58,6 +58,8 @@ struct Params {
     double max_match_real_dist;
     int image_width, image_height;
     float cone_height, cone_width;
+    bool colors_in_projected;
+    std::string service_addr;
     struct {
       std::vector<double> translation;
       std::vector<double> euler_angles;
@@ -69,6 +71,7 @@ struct Params {
       struct {
         std::string projected;
         std::string pcl;
+        std::string matched_markers;
       } output;
     } topics;
   } matcherL, matcherR;

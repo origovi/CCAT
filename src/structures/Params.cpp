@@ -32,6 +32,8 @@ Params::Params(const ros::NodeHandle &nh) {
   nh.param<int>("/AS/P/ccat/matcher/common/image_height", matcherL.image_height, 768);
   nh.param<float>("/AS/P/ccat/matcher/common/cone_width", matcherL.cone_width, 0.228);
   nh.param<float>("/AS/P/ccat/matcher/common/cone_height", matcherL.cone_height, 0.325);
+  nh.param<bool>("/AS/P/ccat/matcher/common/colors_in_projected", matcherL.colors_in_projected, false);
+  nh.param<std::string>("/AS/P/ccat/matcher/common/service_addr", matcherL.service_addr, "/AS/P/calibration");
   matcherR = matcherL;
 
   // Different Part
@@ -39,6 +41,8 @@ Params::Params(const ros::NodeHandle &nh) {
   nh.param<std::string>("/AS/P/ccat/matcher/topics/output/right_projected", matcherR.topics.output.projected, "/AS/P/ccat/projected/right");
   nh.param<std::string>("/AS/P/ccat/matcher/topics/output/left_pcl", matcherL.topics.output.pcl, "/AS/P/ccat/pcl/left");
   nh.param<std::string>("/AS/P/ccat/matcher/topics/output/right_pcl", matcherR.topics.output.pcl, "/AS/P/ccat/pcl/right");
+  nh.param<std::string>("/AS/P/ccat/matcher/topics/output/left_matched_markers", matcherL.topics.output.matched_markers, "/AS/P/ccat/markers/matchings/left");
+  nh.param<std::string>("/AS/P/ccat/matcher/topics/output/right_matched_markers", matcherR.topics.output.matched_markers, "/AS/P/ccat/markers/matchings/right");
   nh.param<std::vector<double>>("/AS/P/ccat/extrinsics/left/translation", matcherL.extrinsics.translation, std::vector<double>(3, 0.0));
   nh.param<std::vector<double>>("/AS/P/ccat/extrinsics/left/euler_angles", matcherL.extrinsics.euler_angles, std::vector<double>(3, 0.0));
   nh.param<std::vector<double>>("/AS/P/ccat/extrinsics/right/translation", matcherR.extrinsics.translation, std::vector<double>(3, 0.0));
