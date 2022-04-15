@@ -1,4 +1,4 @@
-#include "modules/Merger.hpp"
+#include "modules/Merger/Merger.hpp"
 
 /**
  * CONSTRUCTORS AND DESTRUCTOR

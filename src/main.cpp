@@ -7,10 +7,10 @@
 #include <nav_msgs/Odometry.h>
 #include <ros/ros.h>
 
-#include "modules/Matcher.hpp"
-#include "modules/Merger.hpp"
-#include "modules/Preproc.hpp"
-#include "modules/Tracker.hpp"
+#include "modules/Matcher/Matcher.hpp"
+#include "modules/Merger/Merger.hpp"
+#include "modules/Preproc/Preproc.hpp"
+#include "modules/Tracker/Tracker.hpp"
 #include "structures/Params.hpp"
 
 int main(int argc, char **argv) {

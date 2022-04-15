@@ -13,7 +13,7 @@
 #include <list>
 #include <vector>
 
-#include "modules/Matcher.hpp"
+#include "modules/Matcher/Matcher.hpp"
 #include "structures/KDTree.hpp"
 #include "structures/Observation.hpp"
 #include "structures/Params.hpp"

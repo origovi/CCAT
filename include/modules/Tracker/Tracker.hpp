@@ -10,7 +10,7 @@
 
 #include "structures/Cone.hpp"
 #include "structures/Params.hpp"
-#include "structures/Tracking.hpp"
+#include "modules/Tracker/Tracking.hpp"
 #include "structures/KDTree.hpp"
 #include "utilities/conversions.hpp"
 

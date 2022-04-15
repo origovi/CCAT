@@ -9,7 +9,7 @@
  * 
  */
 
-#include "modules/Matcher.hpp"
+#include "modules/Matcher/Matcher.hpp"
 
 /* -------------------------------------------------------------------------- */
 /*                                   PRIVATE                                  */

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.0.2)
 project(ccat)
 
-add_compile_options(-std=c++14)
+add_compile_options(-std=c++17)
 set(CMAKE_BUILD_TYPE "Release")
 
 find_package(catkin REQUIRED COMPONENTS roscpp std_msgs as_msgs pcl_ros tf tf_conversions eigen_conversions image_transport cv_bridge dynamic_reconfigure)
@@ -41,15 +41,17 @@ add_executable(${PROJECT_NAME}_exec
 add_library(${PROJECT_NAME}
   src/structures/KDTree.cpp
   src/structures/Params.cpp
-  src/modules/Preproc.cpp
-  src/modules/Matcher.cpp
-  src/modules/Merger.cpp
-  src/modules/Tracker.cpp
+  src/modules/Preproc/Preproc.cpp
+  src/modules/Matcher/Matcher.cpp
+  src/modules/Matcher/MatcherVis.cpp
+  src/modules/Merger/Merger.cpp
+  src/modules/Tracker/Tracker.cpp
+  src/modules/Tracker/Tracking.cpp
   src/structures/Point.cpp
   src/structures/Observation.cpp
   src/structures/Cone.cpp
-  src/structures/Tracking.cpp
   src/utilities/conversions.cpp
+  src/utilities/Visualization.cpp
 )
 
 add_dependencies(${PROJECT_NAME}_exec as_msgs_generate_messages_cpp)
