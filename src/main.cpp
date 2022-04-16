@@ -12,23 +12,25 @@
 #include "modules/Preproc/Preproc.hpp"
 #include "modules/Tracker/Tracker.hpp"
 #include "structures/Params.hpp"
+#include "utils/Time.hpp"
 
 int main(int argc, char **argv) {
   ros::init(argc, argv, "ccat");
   ros::NodeHandle *const nh(new ros::NodeHandle("ccat"));
 
   Params params(*nh);
+  Visualization::init(nh);
 
   /* Object instances */
 
   Preproc &preproc = Preproc::getInstance();
-  preproc.init(nh, params.preproc);
+  preproc.init(params.preproc);
   Matcher matcherL(params.matcherL, nh, Matcher::LEFT);
   Matcher matcherR(params.matcherR, nh, Matcher::RIGHT);
   Merger &merger = Merger::getInstance();
-  merger.init(nh, params.merger);
+  merger.init(params.merger);
   Tracker &tracker = Tracker::getInstance();
-  tracker.init(nh, params.tracker);
+  tracker.init(params.tracker);
 
   /* Dynamic Reconfigure of camera extrinsics*/
 
@@ -58,15 +60,19 @@ int main(int argc, char **argv) {
   while (ros::ok()) {
     ros::spinOnce();
     if (preproc.hasData()) {
-      matcherL.run(preproc.getData(matcherL.which));
-      matcherR.run(preproc.getData(matcherR.which));
+      Time::tick("main");
+      tracker.accumulate(preproc.getData());
+      matcherL.run(tracker.getObservations(), preproc.getBBs(matcherL.which));
+      matcherR.run(tracker.getObservations(), preproc.getBBs(matcherR.which));
       merger.run(matcherL.getData(), matcherR.getData());
-      tracker.run(merger.getData(), preproc.getCarTf());
+      tracker.run(merger.getData());
       std::cout << std::endl;
+      Time::tock("main");
       //preproc.reset();
     }
     if (tracker.hasData()) conesPub.publish(tracker.getData());
     rate.sleep();
   }
+  
   delete nh;
 }

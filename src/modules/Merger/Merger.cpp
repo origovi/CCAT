@@ -22,34 +22,33 @@ Merger &Merger::getInstance() {
 
 /* Init */
 
-void Merger::init(ros::NodeHandle *const &nh, const Params::Merger &params) {
-  nh_ = nh;
+void Merger::init(const Params::Merger &params) {
   params_ = params;
 }
 
-void Merger::run(const std::vector<Cone> &conesLeft, const std::vector<Cone> &conesRight) {
-  std::map<size_t, const Cone*> projCones;
+void Merger::run(const std::vector<ConeUpdate> &conesLeft, const std::vector<ConeUpdate> &conesRight) {
+  std::map<size_t, const ConeUpdate*> projCones;
 
   // We know that two cones will be the same because they will have the same
   // observation-id, we only need to find those that have the same id.
   // The Cone with a better (smaller) dist will prevail, all other metrics
   // will be ignored.
-  for (const Cone& cone : conesLeft) {
-    auto it = projCones.find(cone.observation->id);
+  for (const ConeUpdate& coneUpdate : conesLeft) {
+    auto it = projCones.find(coneUpdate.id);
     if (it == projCones.end()) {
-      projCones.insert({cone.observation->id, &cone});
+      projCones.insert({coneUpdate.id, &coneUpdate});
     }
-    else if (it->second->matchingDist > cone.matchingDist) {
-      it->second = &cone;
+    else if (it->second->matchingDist > coneUpdate.matchingDist) {
+      it->second = &coneUpdate;
     }
   }
-  for (const Cone& cone : conesRight) {
-    auto it = projCones.find(cone.observation->id);
+  for (const ConeUpdate& coneUpdate : conesRight) {
+    auto it = projCones.find(coneUpdate.id);
     if (it == projCones.end()) {
-      projCones.insert({cone.observation->id, &cone});
+      projCones.insert({coneUpdate.id, &coneUpdate});
     }
-    else if (!bool(it->second) or it->second->matchingDist > cone.matchingDist) {
-      it->second = &cone;
+    else if (!bool(it->second) or it->second->matchingDist > coneUpdate.matchingDist) {
+      it->second = &coneUpdate;
     }
   }
 
@@ -64,6 +63,6 @@ void Merger::run(const std::vector<Cone> &conesLeft, const std::vector<Cone> &co
 
 /* Getters */
 
-const std::vector<Cone> &Merger::getData() const {
+const std::vector<ConeUpdate> &Merger::getData() const {
   return currentCones_;
 }

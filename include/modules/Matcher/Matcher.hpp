@@ -37,11 +37,11 @@
 
 #include "modules/Matcher/MatcherVis.hpp"
 #include "modules/Matcher/Matching.hpp"
-#include "structures/Cone.hpp"
-#include "structures/KDTree.hpp"
+#include "structures/ConeUpdate.hpp"
+#include "utils/KDTree.hpp"
 #include "structures/Observation.hpp"
 #include "structures/Params.hpp"
-#include "utilities/conversions.hpp"
+#include "utils/conversions.hpp"
 
 using PCLPoint = pcl::PointXYZI;
 using PCL = pcl::PointCloud<PCLPoint>;
@@ -58,14 +58,6 @@ class Matcher {
 
   enum Which { LEFT,
                RIGHT };
-
-  /**
-   * @brief Encapsulates the data needed to run the Matcher pipeline.
-   */
-  struct RqdData {
-    std::vector<Observation> observations;
-    geometry_msgs::PoseArray::ConstPtr bbs;
-  };
 
   /**
    * @brief Represents a projected Observation, it contains:
@@ -100,7 +92,7 @@ class Matcher {
   const Params::Matcher params_;
 
   /**
-   * @brief Specifies if the currentCones_ attribute data is valid or not.
+   * @brief Specifies if the currentUpdates_ attribute data is valid or not.
    */
   bool hasValidData_;
 
@@ -113,11 +105,11 @@ class Matcher {
    * @brief The result of matching the BB(s) with the Observations
    * of last iteration.
    */
-  std::vector<Cone> currentCones_;
+  std::vector<ConeUpdate> currentUpdates_;
 
   /**
    * @brief The camera extrinsics of the camera implicit in the Matcher.
-   * It is used to transform a base_link position into camera space.
+   * It is used to transform a local position into camera space.
    * It has the capability to update via a dynamic reconfigure.
    */
   Extrinsics extrinsics_;
@@ -201,7 +193,7 @@ class Matcher {
   /**
    * @brief Computes all the matchings, from the Matcher::Projections that are
    * in front of the camera and all the BB(s).
-   * The result will be placed directly in the currentCones_ attribute.
+   * The result will be placed directly in the currentUpdates_ attribute.
    * 
    * @param[in] projections All the Matcher::Projections
    * @param[in] bbs All the BB(s)
@@ -212,13 +204,6 @@ class Matcher {
   
   void autocalib(const std::vector<Projection> &projections, const geometry_msgs::PoseArray &bbs, const std::vector<Matching> &matchings);
 
-  /**
-   * @brief It deep copies a vector of pcl::shared_ptr to pcl::PointCloud.
-   * 
-   * @param input 
-   * @param output 
-   */
-  static void copyPCLPtrVec(const std::vector<PCL::Ptr> &input, std::vector<PCL::Ptr> &output);
 
   /**
    * @brief Constructs and returns a Point containing the BB centroid
@@ -270,15 +255,16 @@ class Matcher {
    * 
    * @param data The data necessary (aka Observation(s) and BB(s))
    */
-  void run(const RqdData &data);
+  void run(const std::vector<Observation::Ptr> &observations, const geometry_msgs::PoseArray::ConstPtr &bbs);
 
   /**
-   * @brief Returns the currentCones_ attribute, which contains the result of
-   * the matching pipeline.
+   * @brief Returns the currentUpdates_ attribute, which contains the result of
+   * the Matcher pipeline.
    * 
-   * @return The new cones computed in the last iteration of Matcher::run() method
+   * @return The updates of cones computed in the last iteration of
+   * Matcher::run() method
    */
-  const std::vector<Cone> &getData() const;
+  const std::vector<ConeUpdate> &getData() const;
 
   /**
    * @brief Returns whether or not this Matcher has valid data to pass to the

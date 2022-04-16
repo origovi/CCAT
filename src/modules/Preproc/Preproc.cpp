@@ -39,13 +39,6 @@ void Preproc::preprocess(const as_msgs::ObservationArray &observations) {
     }
   }
   res.shrink_to_fit();
-
-  // Transform the points to car location
-  for (size_t i = 0; i < res.size(); ++i) {
-    pcl::transformPointCloud(*res[i].pcl, *res[i].pcl, carTf_);
-    res[i].centroid_base_link = res[i].centroid_global.transformed(carTf_);
-    res[i].distToCar = Point::dist(res[i].centroid_base_link);
-  }
   currentObservations_ = res;
 }
 
@@ -62,8 +55,7 @@ Preproc &Preproc::getInstance() {
 
 /* Init */
 
-void Preproc::init(ros::NodeHandle *const &nh, const Params::Preproc &params) {
-  nh_ = nh;
+void Preproc::init(const Params::Preproc &params) {
   params_ = params;
 }
 
@@ -78,20 +70,22 @@ void Preproc::callback(const as_msgs::ObservationArray::ConstPtr &newObservation
                        const geometry_msgs::PoseArray::ConstPtr &leftDetections,
                        const geometry_msgs::PoseArray::ConstPtr &rightDetections) {
   ROS_INFO("CALLBACK");
+
   tf::poseMsgToEigen(carPos->pose.pose, carTf_);
+
+  // Invert y and z axis
   static const Eigen::Matrix4d aux = (Eigen::Matrix4d() << 1.0, 0.0, 0.0, 0.0,
                                       0.0, -1.0, 0.0, 0.0,
                                       0.0, 0.0, -1.0, 0.0,
                                       0.0, 0.0, 0.0, 1.0)
                                          .finished();
-  // Invert y and z axis
   // carTf_.translation().y() *= -1;
   // carTf_.translation().z() *= -1;
   carTf_ = carTf_.inverse();
   carTf_.matrix() = carTf_.matrix() * aux;
 
-  leftBbs_ = leftDetections;
-  rightBbs_ = rightDetections;
+  leftBBs_ = leftDetections;
+  rightBBs_ = rightDetections;
 
   if (newObservations->observations.empty())
     ROS_WARN("Reading empty observations");
@@ -103,21 +97,19 @@ void Preproc::callback(const as_msgs::ObservationArray::ConstPtr &newObservation
 
 /* Getters */
 
-Matcher::RqdData Preproc::getData(const Matcher::Which &which) const {
-  Matcher::RqdData res;
-  res.observations = currentObservations_;
-
+geometry_msgs::PoseArray::ConstPtr Preproc::getBBs(const Matcher::Which &which) const {
   // For each matcher, we will return the correspondant BB
   switch (which) {
     case Matcher::Which::LEFT:
-      res.bbs = leftBbs_;
-      break;
+      return leftBBs_;
 
-    case Matcher::Which::RIGHT:
-      res.bbs = rightBbs_;
-      break;
+    default:
+      return rightBBs_;
   }
-  return res;
+}
+
+std::pair<const std::vector<Observation> &, const Eigen::Affine3d &> Preproc::getData() const {
+  return {currentObservations_, carTf_};
 }
 
 const bool &Preproc::hasData() const {

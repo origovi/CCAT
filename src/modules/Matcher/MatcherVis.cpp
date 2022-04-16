@@ -32,12 +32,12 @@ cv::Scalar MatcherVis::BBColorToCV(const double &BBColor) {
 
 /* --------------------------------- Public --------------------------------- */
 
-MatcherVis::MatcherVis(ros::NodeHandle *const nh, const Params::Matcher &params) : Visualization(nh), params_(params) {}
+MatcherVis::MatcherVis(const Params::Matcher &params) : params_(params) {}
 
 void MatcherVis::publishPCLs(const std::vector<Observation::Ptr> &observations) {
   pcl::PointCloud<pcl::PointXYZI> pclToPaint;
   for (const Observation::Ptr &obs : observations) {
-    pclToPaint += *obs->pcl;
+    pclToPaint += obs->pcl;
   }
   sensor_msgs::PointCloud2 pcl;
   pcl::toROSMsg(pclToPaint, pcl);

@@ -11,8 +11,8 @@
  * 
  */
 
-#ifndef KDTREE_HPP
-#define KDTREE_HPP
+#ifndef UTILS_KDTREE_HPP
+#define UTILS_KDTREE_HPP
 
 #pragma once
 
@@ -160,4 +160,4 @@ class KDTree {
       const double &rad) const;
 };
 
-#endif  // KDTREE_HPP
+#endif  // UTILS_KDTREE_HPP

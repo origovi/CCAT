@@ -2,7 +2,7 @@
 #define MODULES_MATCHER_MATCHERVIS_HPP
 
 #include "structures/Params.hpp"
-#include "utilities/Visualization.hpp"
+#include "utils/Visualization.hpp"
 #include "modules/Matcher/Matching.hpp"
 #include <cv_bridge/cv_bridge.h>
 #include <geometry_msgs/PoseArray.h>
@@ -19,7 +19,7 @@ class MatcherVis : public Visualization {
   static cv::Scalar BBColorToCV(const double &BBColor);
 
  public:
-  MatcherVis(ros::NodeHandle *const nh, const Params::Matcher &params);
+  MatcherVis(const Params::Matcher &params);
 
   /**
    * @brief For debug purposes, it publishes the PCL(s) corresponding to all

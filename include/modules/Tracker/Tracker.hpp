@@ -8,11 +8,11 @@
 
 #include <vector>
 
+#include "modules/Tracker/TrackerVis.hpp"
 #include "structures/Cone.hpp"
+#include "structures/ConeUpdate.hpp"
 #include "structures/Params.hpp"
-#include "modules/Tracker/Tracking.hpp"
-#include "structures/KDTree.hpp"
-#include "utilities/conversions.hpp"
+#include "utils/KDTree.hpp"
 
 class Tracker {
  private:
@@ -26,25 +26,23 @@ class Tracker {
    * PRIVATE ATTRIBUTES
    */
 
-  ros::NodeHandle *nh_;
   Params::Tracker params_;
-  ros::Publisher markerBaseLinkPub_, markerGlobalPub_;
 
   size_t lastId_;
-  std::list<Tracking> trackings_;
+  std::map<size_t, Cone> cones_;
 
   as_msgs::ConeArray currentCones_;
+
+  TrackerVis vis_;
 
   /**
    * PRIVATE METHODS
    */
-  void updateCurrentCones(const Eigen::Affine3d &carTf);
-  void publishMarkers() const;
+  void updateCurrentCones();
 
-  void getTrackingPoints(std::vector<Point> &points, std::vector<Tracking*> &trackingPtrs);
+  void getTrackingPoints(std::vector<Point> &points, std::vector<Cone *> &trackingPtrs);
 
  public:
-
   /**
    * PUBLIC METHODS
    */
@@ -57,15 +55,17 @@ class Tracker {
 
   /* Init */
 
-  void init(ros::NodeHandle *const &nh, const Params::Tracker &params);
+  void init(const Params::Tracker &params);
 
-  void run(const std::vector<Cone> &cones, const Eigen::Affine3d &carTf);
+  void accumulate(const std::pair<const std::vector<Observation> &, const Eigen::Affine3d &> &data);
+
+  void run(const std::vector<ConeUpdate> &coneUpdates);
 
   /* Callbacks */
 
   /* Getters */
-
-  const as_msgs::ConeArray &getData() const;
+  std::vector<Observation::Ptr> getObservations() const;
+  const as_msgs::ConeArray &getData();
   bool hasData() const;
 };
 

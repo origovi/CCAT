@@ -16,7 +16,7 @@ preproc:
 matcher:
   common:
     debug:                    true                                # bool, enables debugging tools such as markers publishing
-    match_type:               "best fit"                            # string, ["greedy", "best fit"]
+    match_type:               "best fit"                          # string, ["greedy", "best fit"]
     max_match_search_dist:    100.0                               # double (px)
     max_match_real_dist:      50.0                                # double (m)
     image_width:              1024                                # int (px)
@@ -32,7 +32,7 @@ matcher:
       left_pcl:               "/AS/P/ccat/pcl/left"
       right_pcl:              "/AS/P/ccat/pcl/right"
       left_matched_markers:   "/AS/P/ccat/markers/matchings/left"
-      right_matched_markers:   "/AS/P/ccat/markers/matchings/right"
+      right_matched_markers:  "/AS/P/ccat/markers/matchings/right"
 
 tracker:
   debug:                      true
@@ -41,5 +41,5 @@ tracker:
   fancy_markers:              false
   topics:
     output:
-      markers_base_link:      "/AS/P/ccat/markers/base_link"
+      markers_baseLink:      "/AS/P/ccat/markers/base_link"
       markersGlobal:          "/AS/P/ccat/markers/global"

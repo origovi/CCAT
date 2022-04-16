@@ -1,46 +1,53 @@
-#ifndef CONE_HPP
-#define CONE_HPP
+#ifndef STRUCTURES_CONE_HPP
+#define STRUCTURES_CONE_HPP
 
-#include <memory>
-
-#include "as_msgs/BB2.h"
-#include "structures/Observation.hpp"
+#include <Eigen/Geometry>
 #include <algorithm>
 
-#define CONE_DEFAULT_MATCH_DIST 1e10
+#include "as_msgs/Cone.h"
+#include "structures/ConeUpdate.hpp"
+#include "structures/Observation.hpp"
+#include "structures/Point.hpp"
 
 class Cone {
+ private:
+  struct Consideration {
+    ConeUpdate::Type type;
+    double heuristic;
+    Consideration(const ConeUpdate::Type &type, const double &heuristic) : type(type), heuristic(heuristic) {}
+    static bool comparer(const Consideration &c1, const Consideration &c2) { return c1.heuristic < c2.heuristic; }
+  };
+
+  std::vector<Consideration> heap_;
+  ConeUpdate::Type type_;
+
+  static double getHeuristic(const ConeUpdate &coneUpdate, const double &distToCameraPlane, const double &distSqToOldPos);
+
  public:
   /**
-   * CONSTRUCTORS AND DESTRUCTOR
+   * CONSTRUCTOR
    */
 
-  Cone(const Observation::Ptr &_observation, const double &_matchingDist = CONE_DEFAULT_MATCH_DIST);
+  Cone(const Observation &obs, const size_t &id);
 
   /**
    * PUBLIC ATTRIBUTES
    */
 
-  enum Type { Yellow,
-              Blue,
-              SmallOrange,
-              BigOrange,
-              None } type;
-
-  enum Operation { ADD,
-                   DELETE } operation;
-
-  // considerar treure la observacio
-  Observation::Ptr observation;
-  double matchingDist;
-  double distToCameraPlane;
+  Observation::Ptr obs;
+  const size_t id;
 
   /**
    * PUBLIC METHODS
    */
-  explicit operator bool() const;
-  void setTypeFromAsMsgs(const uint8_t &type);
-  uint8_t typeToAsMsgs() const;
+
+  void update(const ConeUpdate &coneUpdate);
+  void updateObs(const Observation &obs, const double &distSqToPosition);
+  void updateLocal(const Eigen::Affine3d &carTf);
+
+  /* Getters */
+  const Point &position_global() const;
+  as_msgs::Cone getASCone() const;
 };
 
-#endif  // CONE_HPP
+#endif  // STRUCTURES_CONE_HPP

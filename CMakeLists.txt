@@ -39,19 +39,21 @@ add_executable(${PROJECT_NAME}_exec
 )
 
 add_library(${PROJECT_NAME}
-  src/structures/KDTree.cpp
-  src/structures/Params.cpp
   src/modules/Preproc/Preproc.cpp
   src/modules/Matcher/Matcher.cpp
   src/modules/Matcher/MatcherVis.cpp
   src/modules/Merger/Merger.cpp
   src/modules/Tracker/Tracker.cpp
-  src/modules/Tracker/Tracking.cpp
+  src/modules/Tracker/TrackerVis.cpp
+  src/structures/Cone.cpp
   src/structures/Point.cpp
   src/structures/Observation.cpp
-  src/structures/Cone.cpp
-  src/utilities/conversions.cpp
-  src/utilities/Visualization.cpp
+  src/structures/ConeUpdate.cpp
+  src/structures/Params.cpp
+  src/utils/conversions.cpp
+  src/utils/KDTree.cpp
+  src/utils/Visualization.cpp
+  src/utils/Time.cpp
 )
 
 add_dependencies(${PROJECT_NAME}_exec as_msgs_generate_messages_cpp)

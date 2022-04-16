@@ -6,7 +6,7 @@
 #include <vector>
 #include <map>
 
-#include "structures/Cone.hpp"
+#include "structures/ConeUpdate.hpp"
 #include "structures/Params.hpp"
 
 class Merger {
@@ -24,7 +24,7 @@ class Merger {
   Params::Merger params_;
   ros::NodeHandle *nh_;
 
-  std::vector<Cone> currentCones_;
+  std::vector<ConeUpdate> currentCones_;
 
   /**
    * PRIVATE METHODS
@@ -43,17 +43,17 @@ class Merger {
 
   /* Init */
 
-  void init(ros::NodeHandle *const &nh, const Params::Merger &params);
+  void init(const Params::Merger &params);
 
   /* Functions */
 
-  void run(const std::vector<Cone> &conesLeft, const std::vector<Cone> &conesRight);
+  void run(const std::vector<ConeUpdate> &conesLeft, const std::vector<ConeUpdate> &conesRight);
 
   /* Callbacks */
 
   /* Getters */
 
-  const std::vector<Cone> &getData() const;
+  const std::vector<ConeUpdate> &getData() const;
 };
 
 #endif  // MERGER_HPP
