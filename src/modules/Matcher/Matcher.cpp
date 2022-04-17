@@ -263,6 +263,13 @@ void Matcher::cfgCallback(const ccat::ExtrinsicsConfig &config, uint32_t level) 
 }
 
 void Matcher::run(const std::vector<Observation::Ptr> &observations, const geometry_msgs::PoseArray::ConstPtr &bbs) {
+  currentUpdates_.clear();
+  if (bbs == nullptr) {
+    ROS_WARN("Intent to match with invalid BBs");
+    return;
+  }
+  if (bbs->poses.size() == 0) return;
+  
   if (calibrated_) hasValidData_ = true;
 
   // 1: Transform the observations (pcls AND centroid) to camera space.
@@ -289,10 +296,7 @@ void Matcher::run(const std::vector<Observation::Ptr> &observations, const geome
   // 3: Create the projections of the points, that is:
   // - Transform all the points to image space
   // - Save only the observations which have at least one point on the image
-  // - Save to currentUpdates_ the cones that do not appear in the image (behind the car)
   std::vector<Projection> projs;
-  currentUpdates_.clear();
-  currentUpdates_.reserve(observations.size());
   projections(observations, projs);
 
   // 4: Now obtain the matches

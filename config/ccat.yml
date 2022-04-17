@@ -3,12 +3,14 @@ common:
   topics:
     input:
       observations:           "/AS/P/pcl_filtering/observations"
-      map:                    "/map/accumulated"
       odometry:               "/limovelo/state"
       left_detections:        "/camera/left/detections"
       right_detections:       "/camera/right/detections"
     output:
       cones:                  "/AS/P/ccat/cones"
+  
+manager:
+  buffer_temp_mem:            1.0                                 # float (s)
 
 preproc:
   cluster_dist:               1.5                                 # double (m)

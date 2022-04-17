@@ -1,5 +1,5 @@
-#ifndef POINT_HPP
-#define POINT_HPP
+#ifndef STRUCTURES_POINT_HPP
+#define STRUCTURES_POINT_HPP
 
 #include <as_msgs/Observation.h>
 
@@ -77,4 +77,4 @@ class Point {
   size_t size() const;
 };
 
-#endif  // POINT_HPP
+#endif  // STRUCTURES_POINT_HPP

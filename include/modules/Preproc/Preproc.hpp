@@ -1,5 +1,5 @@
-#ifndef PREPROC_HPP
-#define PREPROC_HPP
+#ifndef MODULES_PREPROC_PREPROC_HPP
+#define MODULES_PREPROC_PREPROC_HPP
 
 #include <as_msgs/Observation.h>
 #include <as_msgs/ObservationArray.h>
@@ -34,6 +34,7 @@ class Preproc {
   Params::Preproc params_;
   bool hasData_;
   std::vector<Observation> currentObservations_;
+  ros::Time currentObservationsStamp_;
   geometry_msgs::PoseArray::ConstPtr leftBBs_, rightBBs_;
   Eigen::Affine3d carTf_;
 
@@ -59,19 +60,18 @@ class Preproc {
 
   void init(const Params::Preproc &params);
 
+  void run(const as_msgs::ObservationArray::ConstPtr &observations,
+           const nav_msgs::Odometry::ConstPtr &odom,
+           const geometry_msgs::PoseArray::ConstPtr &leftBBs,
+           const geometry_msgs::PoseArray::ConstPtr &rightBBs);
+
   void reset();
 
-  /* Callbacks */
-
-  void callback(const as_msgs::ObservationArray::ConstPtr &newObservations, const nav_msgs::Odometry::ConstPtr &carPos,
-                const geometry_msgs::PoseArray::ConstPtr &leftDetections,
-                const geometry_msgs::PoseArray::ConstPtr &rightDetections);
-
   /* Getters */
-  geometry_msgs::PoseArray::ConstPtr getBBs(const Matcher::Which &which) const;
+  const geometry_msgs::PoseArray::ConstPtr &getBBs(const Matcher::Which &which) const;
   std::pair<const std::vector<Observation> &, const Eigen::Affine3d &> getData() const;
   const bool &hasData() const;
   const Eigen::Affine3d &getCarTf() const;
 };
 
-#endif  // PREPROC_HPP
+#endif  // MODULES_PREPROC_PREPROC_HPP

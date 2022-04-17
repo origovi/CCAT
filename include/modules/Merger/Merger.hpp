@@ -1,5 +1,5 @@
-#ifndef MERGER_HPP
-#define MERGER_HPP
+#ifndef MODULES_MERGER_HPP
+#define MODULES_MERGER_HPP
 
 #include <ros/ros.h>
 
@@ -56,4 +56,4 @@ class Merger {
   const std::vector<ConeUpdate> &getData() const;
 };
 
-#endif  // MERGER_HPP
+#endif  // MODULES_MERGER_HPP

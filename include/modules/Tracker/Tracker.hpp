@@ -1,5 +1,5 @@
-#ifndef TRACKER_HPP
-#define TRACKER_HPP
+#ifndef MODULES_TRACKER_TRACKER_HPP
+#define MODULES_TRACKER_TRACKER_HPP
 
 #include <as_msgs/ConeArray.h>
 #include <ros/ros.h>
@@ -69,4 +69,4 @@ class Tracker {
   bool hasData() const;
 };
 
-#endif  // TRACKER_HPP
+#endif  // MODULES_TRACKER_TRACKER_HPP

@@ -1,5 +1,5 @@
-#ifndef OBSERVATION_HPP
-#define OBSERVATION_HPP
+#ifndef STRUCTURES_OBSERVATION_HPP
+#define STRUCTURES_OBSERVATION_HPP
 
 #include <pcl/common/transforms.h>
 #include <pcl/point_cloud.h>
@@ -59,4 +59,4 @@ class Observation {
   void updateLocal(const Eigen::Affine3d &carTf);
 };
 
-#endif  // OBSERVATION_HPP
+#endif  // STRUCTURES_OBSERVATION_HPP

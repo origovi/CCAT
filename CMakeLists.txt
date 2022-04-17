@@ -54,6 +54,7 @@ add_library(${PROJECT_NAME}
   src/utils/KDTree.cpp
   src/utils/Visualization.cpp
   src/utils/Time.cpp
+  src/Manager.cpp
 )
 
 add_dependencies(${PROJECT_NAME}_exec as_msgs_generate_messages_cpp)

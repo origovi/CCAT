@@ -7,12 +7,18 @@ Params::Params(const ros::NodeHandle &nh) {
 
   nh.param<int>("/AS/P/ccat/common/frequency", common.frequency, 10);
   nh.param<std::string>("/AS/P/ccat/common/topics/input/observations", common.topics.input.observations, "/cones/observed");
-  nh.param<std::string>("/AS/P/ccat/common/topics/input/odometry", common.topics.input.odometry, "/limovelo/state");
-  nh.param<std::string>("/AS/P/ccat/common/topics/input/map", common.topics.input.map, "/map/accumulated");
+  nh.param<std::string>("/AS/P/ccat/common/topics/input/odom", common.topics.input.odom, "/limovelo/state");
   nh.param<std::string>("/AS/P/ccat/common/topics/input/left_detections", common.topics.input.left_bbs, "/camera/left/detections");
   nh.param<std::string>("/AS/P/ccat/common/topics/input/right_detections", common.topics.input.right_bbs, "/camera/right/detections");
   nh.param<std::string>("/AS/P/ccat/common/topics/output/cones", common.topics.output.cones, "/AS/P/ccat/cones");
 
+
+  /**
+   * MANAGER
+   */
+  
+  nh.param<float>("/AS/P/ccat/manager/buffer_temp_mem", manager.bufferTempMem, 1.0);
+  
   /**
    * PREPROC
    */

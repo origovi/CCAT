@@ -65,13 +65,11 @@ void Preproc::reset() {
 
 /* Callbacks */
 
-void Preproc::callback(const as_msgs::ObservationArray::ConstPtr &newObservations,
-                       const nav_msgs::Odometry::ConstPtr &carPos,
+void Preproc::run(const as_msgs::ObservationArray::ConstPtr &newObservations,
+                       const nav_msgs::Odometry::ConstPtr &odom,
                        const geometry_msgs::PoseArray::ConstPtr &leftDetections,
                        const geometry_msgs::PoseArray::ConstPtr &rightDetections) {
-  ROS_INFO("CALLBACK");
-
-  tf::poseMsgToEigen(carPos->pose.pose, carTf_);
+  tf::poseMsgToEigen(odom->pose.pose, carTf_);
 
   // Invert y and z axis
   static const Eigen::Matrix4d aux = (Eigen::Matrix4d() << 1.0, 0.0, 0.0, 0.0,
@@ -90,14 +88,18 @@ void Preproc::callback(const as_msgs::ObservationArray::ConstPtr &newObservation
   if (newObservations->observations.empty())
     ROS_WARN("Reading empty observations");
 
-  preprocess(*newObservations);
+  // Only preprocess observations if they are different from the lasts
+  if (newObservations->header.stamp != currentObservationsStamp_) {
+    preprocess(*newObservations);
+    currentObservationsStamp_ = newObservations->header.stamp;
+  }
   std::cout << "orig size: " << newObservations->observations.size() << " process size: " << currentObservations_.size() << std::endl;
   hasData_ = true;
 }
 
 /* Getters */
 
-geometry_msgs::PoseArray::ConstPtr Preproc::getBBs(const Matcher::Which &which) const {
+const geometry_msgs::PoseArray::ConstPtr &Preproc::getBBs(const Matcher::Which &which) const {
   // For each matcher, we will return the correspondant BB
   switch (which) {
     case Matcher::Which::LEFT:

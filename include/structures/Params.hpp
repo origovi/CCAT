@@ -1,5 +1,5 @@
-#ifndef PARAMS_HPP
-#define PARAMS_HPP
+#ifndef STRUCTURES_PARAMS_HPP
+#define STRUCTURES_PARAMS_HPP
 
 #include <ros/ros.h>
 
@@ -23,8 +23,7 @@ struct Params {
     struct {
       struct {
         std::string observations;
-        std::string odometry;
-        std::string map;
+        std::string odom;
         std::string left_bbs, right_bbs;
       } input;
       struct {
@@ -32,6 +31,14 @@ struct Params {
       } output;
     } topics;
   } common;
+
+  /**
+   * MANAGER
+   */
+
+  struct Manager {
+    float bufferTempMem;
+  } manager;
 
   /**
    * PREPROC
@@ -102,4 +109,4 @@ struct Params {
   } tracker;
 };
 
-#endif
+#endif  // STRUCTURES_PARAMS_HPP
