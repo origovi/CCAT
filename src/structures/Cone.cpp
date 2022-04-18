@@ -61,6 +61,7 @@ void Cone::update(const ConeUpdate &coneUpdate) {
 }
 
 void Cone::updateObs(const Observation &obs, const double &distSqToPosition) {
+  *this->obs = obs;
 }
 
 void Cone::updateLocal(const Eigen::Affine3d &carTf) {

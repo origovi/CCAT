@@ -1,4 +1,5 @@
 <launch>
+  <rosparam param="use_sim_time">true</rosparam>
   <node name="ccat" pkg="ccat" type="ccat_exec" output="screen" ns="/AS/P">
     <rosparam command="load" file="$(find ccat)/config/ccat.yml" />
     <rosparam command="load" file="$(find ccat)/config/calibration/extrinsics_left.yml" ns="extrinsics/left" />

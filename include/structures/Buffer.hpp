@@ -6,38 +6,77 @@
 #include <deque>
 #include <stdexcept>
 
+namespace BuffF {
+inline ros::Duration abs(const ros::Duration &d) { return ros::Duration().fromNSec(std::abs(d.toNSec())); }
+}  // namespace BuffF
+
 template <typename BufferedType>
 class Buffer : private std::deque<std::pair<BufferedType, ros::Time>> {
  private:
+  using Parent = std::deque<std::pair<BufferedType, ros::Time>>;
   const ros::Duration tempMem_;
 
  public:
   Buffer(const float &tempMem) : tempMem_(tempMem) {}
 
-  bool empty() const { return this->empty(); }
+  bool empty() const { return Parent::empty(); }
 
-  size_t size() const { return this->size(); }
+  size_t size() const { return Parent::size(); }
 
-  const ros::Time &oldest() const {
+  const ros::Time &oldestStamp() const {
     if (empty()) {
       throw std::runtime_error("Buffer is empty, cannot get stamp");
     }
-    return this->front().second;
+    return Parent::front().second;
   }
 
-  const ros::Time &newest() const {
+  const BufferedType &oldestElem() const {
+    if (empty()) {
+      throw std::runtime_error("Buffer is empty, cannot get element");
+    }
+    return Parent::front().first;
+  }
+
+  const ros::Time &newestStamp() const {
     if (empty()) {
       throw std::runtime_error("Buffer is empty, cannot get stamp");
     }
-    return this->back().second;
+    return Parent::back().second;
+  }
+
+  const BufferedType &newestElem() const {
+    if (empty()) {
+      throw std::runtime_error("Buffer is empty, cannot get element");
+    }
+    return Parent::back().first;
+  }
+
+  ros::Duration avgDelay() const {
+    if (size() < 2) return ros::Duration();
+    return ros::Duration().fromNSec((newestStamp() - oldestStamp()).toNSec() / (size() - 1));
+  }
+
+  double avgFreq() const {
+    if (size() < 2) return 0.0;
+    return 1.0 / avgDelay().toSec();
+  }
+
+  template <typename BufferedType2>
+  bool isSynchWith(const Buffer<BufferedType2> &buffer) const {
+    ros::Duration diff = BuffF::abs(newestStamp() - buffer.newestStamp());
+    if (avgFreq() > buffer.avgFreq()) {
+      return diff < avgDelay() * 0.5;
+    } else {
+      return diff < buffer.avgDelay() * 0.5;
+    }
   }
 
   void add(const BufferedType &element, const ros::Time &stamp = ros::Time::now()) {
-    this->emplace_back(element, stamp);
+    Parent::emplace_back(element, stamp);
 
     // Readjust
-    while (newest() - oldest() > tempMem_) {
-      this->pop_front();
+    while (newestStamp() - oldestStamp() > tempMem_) {
+      Parent::pop_front();
     }
   }
 
@@ -45,11 +84,11 @@ class Buffer : private std::deque<std::pair<BufferedType, ros::Time>> {
     if (empty()) {
       throw std::runtime_error("Buffer is empty, cannot get any element");
     }
-    if (oldest() >= stamp) {
+    if (oldestStamp() >= stamp) {
       throw std::runtime_error("There is no element before stamp in Buffer");
     }
 
-    for (auto it = this->crbegin(); it != this->crend(); it++) {
+    for (auto it = Parent::crbegin(); it != Parent::crend(); it++) {
       if (it->second < stamp) {
         return it->first;
       }
@@ -60,11 +99,11 @@ class Buffer : private std::deque<std::pair<BufferedType, ros::Time>> {
     if (empty()) {
       throw std::runtime_error("Buffer is empty, cannot get any element");
     }
-    if (newest() >= stamp) {
+    if (newestStamp() >= stamp) {
       throw std::runtime_error("There is no element before stamp in Buffer");
     }
 
-    for (auto it = this->cbegin(); it != this->cend(); it++) {
+    for (auto it = Parent::cbegin(); it != Parent::cend(); it++) {
       if (it->second > stamp) {
         return it->first;
       }
@@ -76,11 +115,11 @@ class Buffer : private std::deque<std::pair<BufferedType, ros::Time>> {
       throw std::runtime_error("Buffer is empty, cannot get any element");
     }
 
-    ros::Duration closestDiff = std::abs(this->back().second - stamp);
-    const BufferedType &closestElem = this->back().first;
+    ros::Duration closestDiff = BuffF::abs(Parent::back().second - stamp);
+    const BufferedType &closestElem = Parent::back().first;
 
-    for (auto it = this->crbegin(); it != this->crend(); it++) {
-      ros::Duration diff = std::abs(it->second - stamp);
+    for (auto it = Parent::crbegin(); it != Parent::crend(); it++) {
+      ros::Duration diff = BuffF::abs(it->second - stamp);
       if (diff <= closestDiff) {
         closestDiff = diff;
         closestElem = it->first;

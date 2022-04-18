@@ -13,11 +13,9 @@ Manager::~Manager() {
   delete buffOdom_;
 }
 
-void Manager::run(const nav_msgs::Odometry::ConstPtr &odom,
-                  const geometry_msgs::PoseArray::ConstPtr &leftBBs,
-                  const geometry_msgs::PoseArray::ConstPtr &rightBBs) const {
+void Manager::run() const {
   Time::tick("main");
-  preproc->run(latestObs_, odom, leftBBs, rightBBs);
+  preproc->run(lastRunObs_, lastRunOdom_, lastRunLeftBBs_, lastRunRightBBs_);
   tracker->accumulate(preproc->getData());
   matcherL->run(tracker->getObservations(), preproc->getBBs(matcherL->which));
   matcherR->run(tracker->getObservations(), preproc->getBBs(matcherR->which));
@@ -30,12 +28,45 @@ void Manager::run(const nav_msgs::Odometry::ConstPtr &odom,
 }
 
 void Manager::runIfPossible() {
-  if (latestObs_ == nullptr or buffOdom_->size() < 5) return;
-  if (buffRightBBs_->size() < 5 and buffLeftBBs_->size() < 5) return;
-  //if (ros::Time::now() - lastRunStamp_ < ros::Duration(params_.minTimeBetweenPubs)) return;
+  // If some of the data is missing or we haven't got enough, return
+  if (latestObs_ == nullptr or !buffHasValidData(*buffOdom_)) return;
+  nav_msgs::Odometry::ConstPtr odom = buffOdom_->newestElem();
+  geometry_msgs::PoseArray::ConstPtr leftBBs, rightBBs;
 
-  lastRunStamp_ = ros::Time::now();
-  //run();
+  if (buffHasValidData(*buffRightBBs_) and buffRightBBs_->isSynchWith(*buffOdom_)) {
+    rightBBs = buffRightBBs_->newestElem();
+  }
+  if (buffHasValidData(*buffLeftBBs_) and buffLeftBBs_->isSynchWith(*buffOdom_)) {
+    leftBBs = buffLeftBBs_->newestElem();
+  }
+
+  // Don't run same BBs with same Observations and Odom twice
+  if (odom == lastRunOdom_ and latestObs_ == lastRunObs_) {
+    if (lastRunLeftBBs_ == leftBBs) {
+      leftBBs = nullptr;
+    }
+    if (lastRunRightBBs_ == rightBBs) {
+      rightBBs = nullptr;
+    }
+    // No need to re-run:
+    // 1. odom and observations are same &&
+    // 2. BBs are either the same or not in synch
+    if (rightBBs == nullptr and leftBBs == nullptr) return;
+  }
+
+  // Update latest vars
+  lastRunOdom_ = odom;
+  lastRunObs_ = latestObs_;
+  lastRunLeftBBs_ = leftBBs;
+  lastRunRightBBs_ = rightBBs;
+
+  // Run
+  run();
+}
+
+template <typename BufferedType>
+bool Manager::buffHasValidData(const Buffer<BufferedType> &buff) const {
+  return buff.size() >= 5 and ros::Time::now() - buff.newestStamp() < ros::Duration(1.0);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -47,7 +78,10 @@ Manager &Manager::getInstance() {
   return manager;
 }
 
-void Manager::init(ros::NodeHandle *const nh, const Params &params, const ros::Publisher &conesPub) {
+void Manager::init(ros::NodeHandle *const nh, const Params &params,
+                   const ros::Publisher &conesPub,
+                   dynamic_reconfigure::Server<ccat::ExtrinsicsConfig> &cfgSrv_extr_left,
+                   dynamic_reconfigure::Server<ccat::ExtrinsicsConfig> &cfgSrv_extr_right) {
   conesPub_ = conesPub;
   params_ = params.manager;
 
@@ -60,6 +94,9 @@ void Manager::init(ros::NodeHandle *const nh, const Params &params, const ros::P
   merger->init(params.merger);
   tracker = &Tracker::getInstance();
   tracker->init(params.tracker);
+
+  cfgSrv_extr_left.setCallback(boost::bind(&Matcher::cfgCallback, matcherL, _1, _2));
+  cfgSrv_extr_right.setCallback(boost::bind(&Matcher::cfgCallback, matcherR, _1, _2));
 
   /* Initialize attributes */
   buffLeftBBs_ = new Buffer<geometry_msgs::PoseArray::ConstPtr>(params.manager.bufferTempMem);
