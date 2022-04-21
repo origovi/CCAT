@@ -11,6 +11,7 @@ common:
   
 manager:
   buffer_temp_mem:            1.0                                 # float (s)
+  static_calib:               true                               # bool, makes a loop of matcher(s) run with same information, useful to calibrate when no input is received
 
 preproc:
   cluster_dist:               1.5                                 # double (m)

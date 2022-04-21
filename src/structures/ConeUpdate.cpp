@@ -4,12 +4,12 @@
  * CONSTRUCTORS
  */
 
-ConeUpdate::ConeUpdate(const size_t &id) : id(id), matchingDist(CONE_DEFAULT_MATCH_DIST) {
+ConeUpdate::ConeUpdate(const size_t &id) : id(id), matchingDist(CONE_DEFAULT_MATCH_DIST), distToCameraPlane(CONE_DEFAULT_DIST_TO_CAM_PLANE) {
   this->type = NONE;
   this->operation = ADD;
 }
 
-ConeUpdate::ConeUpdate(const size_t &id, const uint8_t &bbType, const double &matchingDist) : id(id), matchingDist(matchingDist) {
+ConeUpdate::ConeUpdate(const size_t &id, const uint8_t &bbType, const double &matchingDist, const double &distToCameraPlane) : id(id), matchingDist(matchingDist), distToCameraPlane(distToCameraPlane) {
   setTypeFromAsMsgs(bbType);
   this->operation = ADD;
 }

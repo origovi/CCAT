@@ -21,7 +21,7 @@ class Cone {
   std::vector<Consideration> heap_;
   ConeUpdate::Type type_;
 
-  static double getHeuristic(const ConeUpdate &coneUpdate, const double &distToCameraPlane, const double &distSqToOldPos);
+  static double getHeuristic(const ConeUpdate &coneUpdate, const double &distSqToOldPos);
 
  public:
   /**

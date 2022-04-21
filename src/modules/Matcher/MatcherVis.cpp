@@ -34,10 +34,10 @@ cv::Scalar MatcherVis::BBColorToCV(const double &BBColor) {
 
 MatcherVis::MatcherVis(const Params::Matcher &params) : params_(params) {}
 
-void MatcherVis::publishPCLs(const std::vector<Observation::Ptr> &observations) {
+void MatcherVis::publishPCLs(const std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr> &pcls) {
   pcl::PointCloud<pcl::PointXYZI> pclToPaint;
-  for (const Observation::Ptr &obs : observations) {
-    pclToPaint += obs->pcl;
+  for (const PCL::Ptr &pcl : pcls) {
+    pclToPaint += *pcl;
   }
   sensor_msgs::PointCloud2 pcl;
   pcl::toROSMsg(pclToPaint, pcl);

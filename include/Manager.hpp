@@ -7,6 +7,8 @@
 #include <geometry_msgs/PoseArray.h>
 #include <nav_msgs/Odometry.h>
 #include <ros/ros.h>
+#include <ros/callback_queue.h>
+#include <omp.h>
 
 #include "modules/Matcher/Matcher.hpp"
 #include "modules/Merger/Merger.hpp"
@@ -35,6 +37,7 @@ class Manager {
 
   ros::Publisher conesPub_;
   Params::Manager params_;
+  ros::CallbackQueue *calibQueue_;
 
   /* Last run params */
   nav_msgs::Odometry::ConstPtr lastRunOdom_;
@@ -44,6 +47,7 @@ class Manager {
   /* ---------------------------- Private Methods --------------------------- */
   void run() const;
   void runIfPossible();
+  void calibLoop() const;
   template <typename BufferedType>
   bool buffHasValidData(const Buffer<BufferedType> &buff) const;
 
@@ -55,7 +59,8 @@ class Manager {
   void init(ros::NodeHandle *const nh, const Params &params,
             const ros::Publisher &conesPub,
             dynamic_reconfigure::Server<ccat::ExtrinsicsConfig> &cfgSrv_extr_left,
-            dynamic_reconfigure::Server<ccat::ExtrinsicsConfig> &cfgSrv_extr_right);
+            dynamic_reconfigure::Server<ccat::ExtrinsicsConfig> &cfgSrv_extr_right,
+            ros::CallbackQueue *const calibQueue);
 
   /* Callbacks */
   void leftBBsCallback(const geometry_msgs::PoseArray::ConstPtr &bbs);

@@ -14,17 +14,28 @@ Manager::~Manager() {
 }
 
 void Manager::run() const {
-  Time::tick("main");
-  preproc->run(lastRunObs_, lastRunOdom_, lastRunLeftBBs_, lastRunRightBBs_);
-  tracker->accumulate(preproc->getData());
-  matcherL->run(tracker->getObservations(), preproc->getBBs(matcherL->which));
-  matcherR->run(tracker->getObservations(), preproc->getBBs(matcherR->which));
-  merger->run(matcherL->getData(), matcherR->getData());
-  tracker->run(merger->getData());
-  std::cout << std::endl;
-  Time::tock("main");
-  //preproc->reset();
-  if (tracker->hasData()) conesPub_.publish(tracker->getData());
+  #pragma omp parallel
+  #pragma omp single
+  {
+    Time::tick("main");
+    preproc->run(lastRunObs_, lastRunOdom_, lastRunLeftBBs_, lastRunRightBBs_);
+    tracker->accumulate(preproc->getData());
+    calibQueue_->callAvailable();
+    #pragma omp task
+    matcherL->run(tracker->getObservations(), preproc->getBBs(matcherL->which));
+    #pragma omp task
+    matcherR->run(tracker->getObservations(), preproc->getBBs(matcherR->which));
+    #pragma omp taskwait
+    merger->run(matcherL->getData(), matcherR->getData());
+    tracker->run(merger->getData());
+    std::cout << std::endl;
+    Time::tock("main");
+    //preproc->reset();
+    if (tracker->hasData()) conesPub_.publish(tracker->getData());
+  }
+
+  if (params_.static_calib and lastRunLeftBBs_ != nullptr and lastRunRightBBs_ != nullptr)
+    calibLoop();
 }
 
 void Manager::runIfPossible() {
@@ -64,6 +75,16 @@ void Manager::runIfPossible() {
   run();
 }
 
+void Manager::calibLoop() const {
+  ros::WallRate calibRate(5);
+  while (ros::ok()) {
+    calibQueue_->callAvailable();
+    matcherL->run(tracker->getObservations(), preproc->getBBs(matcherL->which));
+    matcherR->run(tracker->getObservations(), preproc->getBBs(matcherR->which));
+    calibRate.sleep();
+  }
+}
+
 template <typename BufferedType>
 bool Manager::buffHasValidData(const Buffer<BufferedType> &buff) const {
   return buff.size() >= 5 and ros::Time::now() - buff.newestStamp() < ros::Duration(1.0);
@@ -81,9 +102,11 @@ Manager &Manager::getInstance() {
 void Manager::init(ros::NodeHandle *const nh, const Params &params,
                    const ros::Publisher &conesPub,
                    dynamic_reconfigure::Server<ccat::ExtrinsicsConfig> &cfgSrv_extr_left,
-                   dynamic_reconfigure::Server<ccat::ExtrinsicsConfig> &cfgSrv_extr_right) {
+                   dynamic_reconfigure::Server<ccat::ExtrinsicsConfig> &cfgSrv_extr_right,
+                   ros::CallbackQueue *const calibQueue) {
   conesPub_ = conesPub;
   params_ = params.manager;
+  calibQueue_ = calibQueue;
 
   /* Initialize modules */
   preproc = &Preproc::getInstance();

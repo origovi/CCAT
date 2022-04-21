@@ -8,6 +8,7 @@
 #include "structures/Observation.hpp"
 
 #define CONE_DEFAULT_MATCH_DIST 1e10
+#define CONE_DEFAULT_DIST_TO_CAM_PLANE 1e10
 
 class ConeUpdate {
  public:
@@ -32,11 +33,13 @@ class ConeUpdate {
   ConeUpdate(const size_t &id);
 
   // Matched update
-  ConeUpdate(const size_t &id, const uint8_t &bbType, const double &matchingDist);
+  ConeUpdate(const size_t &id, const uint8_t &bbType, const double &matchingDist, const double &distToCameraPlane);
 
   const size_t id;
 
   const double matchingDist;
+
+  const double distToCameraPlane;
 
   /**
    * PUBLIC METHODS

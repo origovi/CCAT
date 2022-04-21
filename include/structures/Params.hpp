@@ -38,6 +38,7 @@ struct Params {
 
   struct Manager {
     float bufferTempMem;
+    bool static_calib;
   } manager;
 
   /**

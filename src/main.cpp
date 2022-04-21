@@ -2,6 +2,7 @@
 #include <ccat/ExtrinsicsConfig.h>
 #include <dynamic_reconfigure/server.h>
 #include <ros/ros.h>
+#include <ros/callback_queue.h>
 
 #include "Manager.hpp"
 #include "structures/Params.hpp"
@@ -15,6 +16,7 @@ int main(int argc, char **argv) {
   Visualization::init(nh);
 
   Manager &manager = Manager::getInstance();
+  ros::CallbackQueue calibQueue;
 
   /* Subscribers */
   ros::Subscriber subObs = nh->subscribe(params.common.topics.input.observations, 10, &Manager::obsCallback, &manager);
@@ -28,10 +30,12 @@ int main(int argc, char **argv) {
   /* Dynamic Reconfigure of camera extrinsics*/
   // We need to declare two NHs because there must be only one dyn_rec::Server per NH
   ros::NodeHandle nh_cfg_left(*nh, "cfg_left_cam"), nh_cfg_right(*nh, "cfg_right_cam");
+  nh_cfg_left.setCallbackQueue(&calibQueue);
+  nh_cfg_right.setCallbackQueue(&calibQueue);
   dynamic_reconfigure::Server<ccat::ExtrinsicsConfig> cfgSrv_extr_left(nh_cfg_left), cfgSrv_extr_right(nh_cfg_right);
 
   /* Manager initilization */
-  manager.init(nh, params, pubCones, cfgSrv_extr_left, cfgSrv_extr_right);
+  manager.init(nh, params, pubCones, cfgSrv_extr_left, cfgSrv_extr_right, &calibQueue);
 
   // Enjoy
   ros::spin();

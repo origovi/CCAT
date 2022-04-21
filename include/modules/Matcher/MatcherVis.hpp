@@ -28,7 +28,7 @@ class MatcherVis : public Visualization {
    * 
    * @param observations 
    */
-  void publishPCLs(const std::vector<Observation::Ptr> &observations);
+  void publishPCLs(const std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr> &pcls);
 
   /**
    * @brief For debug purposes, it publishes the projected image of all the

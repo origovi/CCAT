@@ -14,9 +14,9 @@ Cone::Cone(const Observation &obs, const size_t &id) : id(id) {
  * PRIVATE METHODS
  */
 
-double Cone::getHeuristic(const ConeUpdate &coneUpdate, const double &distToCameraPlane, const double &distSqToOldPos) {
-  std::cout << coneUpdate.type << " " << coneUpdate.matchingDist << " " << distToCameraPlane << " " << coneUpdate.matchingDist * distToCameraPlane << " " << 1 / (coneUpdate.matchingDist * distToCameraPlane) << std::endl;
-  return 1.0 / (coneUpdate.matchingDist * distToCameraPlane);
+double Cone::getHeuristic(const ConeUpdate &coneUpdate, const double &distSqToOldPos) {
+  std::cout << coneUpdate.type << " " << coneUpdate.matchingDist << " " << coneUpdate.distToCameraPlane << " " << coneUpdate.matchingDist * coneUpdate.distToCameraPlane << " " << 1 / (coneUpdate.matchingDist * coneUpdate.distToCameraPlane) << std::endl;
+  return 1.0 / (coneUpdate.matchingDist * coneUpdate.distToCameraPlane);
 }
 
 /**
@@ -25,7 +25,7 @@ double Cone::getHeuristic(const ConeUpdate &coneUpdate, const double &distToCame
 
 void Cone::update(const ConeUpdate &coneUpdate) {
   if (coneUpdate.type == ConeUpdate::NONE) return;
-  double coneHeuristic = getHeuristic(coneUpdate, obs->temp.centroid_camera.x, 0.0);
+  double coneHeuristic = getHeuristic(coneUpdate, 0.0);
   if (heap_.size() >= 20) {
     // Find the element with min heuristic in the vector
     // and replace it if the heuristic is bigger.

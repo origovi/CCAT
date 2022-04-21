@@ -15,20 +15,20 @@
 /*                                   PRIVATE                                  */
 /* -------------------------------------------------------------------------- */
 
-void Matcher::projections(const std::vector<Observation::Ptr> &observations, std::vector<Projection> &projs) {
-  projs.reserve(observations.size());
+void Matcher::projections(const std::vector<ProjectionData> &projDatas, std::vector<Projection> &projs) {
+  projs.reserve(projDatas.size());
   Projection proj;
   //std::cout << '[' << which << "]: Recons Size: " << recons.size() << std::endl;
 
-  for (size_t i = 0; i < observations.size(); i++) {
-    proj.observation = observations[i];
+  for (size_t i = 0; i < projDatas.size(); i++) {
+    proj.data = &projDatas[i];
     bool hasAnyPointInImage = false;
 
-    proj.projPoints.resize(observations[i]->temp.pcl->size());
+    proj.projPoints.resize(projDatas[i].pcl_cam->size());
 
-    for (size_t pInd = 0; pInd < observations[i]->temp.pcl->size(); pInd++) {
+    for (size_t pInd = 0; pInd < projDatas[i].pcl_cam->size(); pInd++) {
       // Convert point to image coordinates (axis must be reassigned)
-      Eigen::Vector3f aux = observations[i]->temp.pcl->operator[](pInd).getVector3fMap();
+      Eigen::Vector3f aux = projDatas[i].pcl_cam->operator[](pInd).getVector3fMap();
       aux = Eigen::Vector3f(-aux.y(), -aux.z(), aux.x());
 
       // Transform point with camera intrinsics
@@ -49,7 +49,7 @@ void Matcher::projections(const std::vector<Observation::Ptr> &observations, std
     if (hasAnyPointInImage) {
       // 1. Transform the centroid of the pcl to image coords
       // 2. Push the projection to the result
-      Eigen::Vector3f aux = observations[i]->temp.centroid_camera.vec3f();
+      Eigen::Vector3f aux = projDatas[i].centroid_cam.vec3f();
       aux = Eigen::Vector3f(-aux.y(), -aux.z(), aux.x());
       Eigen::Vector3f imageCentroidVec(intrinsics_ * aux);
 
@@ -121,7 +121,7 @@ void Matcher::matchBestFit(const size_t &bbInd, const geometry_msgs::PoseArray &
 }
 
 void Matcher::matchGreedy(const size_t &projInd, const std::vector<Projection> &projections, const KDTree &bbsKDT, std::vector<Matching> &matches) const {
-  Point projCentroidAndBBHeight(projections[projInd].imageCentroid.x, projections[projInd].imageCentroid.y, bbHeightFromZ(projections[projInd].observation->temp.centroid_camera.x));
+  Point projCentroidAndBBHeight(projections[projInd].imageCentroid.x, projections[projInd].imageCentroid.y, bbHeightFromZ(projections[projInd].data->centroid_cam.x));
   pointIndexV bbPointInd(bbsKDT.nearest_pointIndex(projCentroidAndBBHeight));
   double dist = Point::dist(projCentroidAndBBHeight, bbPointInd->first);
   std::cout << "bb height: " << projCentroidAndBBHeight.z << " " << bbPointInd->first.z << std::endl;
@@ -150,7 +150,7 @@ void Matcher::computeMatchings(const std::vector<Projection> &projections, const
     std::vector<Point> pointsToBuildKDTree;
     pointsToBuildKDTree.reserve(projections.size());
     for (const Projection &proj : projections) {
-      pointsToBuildKDTree.emplace_back(proj.imageCentroid.x, proj.imageCentroid.y, bbHeightFromZ(proj.observation->temp.centroid_camera.x));
+      pointsToBuildKDTree.emplace_back(proj.imageCentroid.x, proj.imageCentroid.y, bbHeightFromZ(proj.data->centroid_cam.x));
     }
     KDTree projsKDT(pointsToBuildKDTree);
     for (size_t bbInd = 0; bbInd < bbs.poses.size(); bbInd++) {
@@ -189,9 +189,9 @@ void Matcher::updateData(const std::vector<Projection> &projections, const geome
   for (size_t i = 0; i < matchings.size(); i++) {
     if (bool(matchings[i])) {
       matchings_num++;
-      currentUpdates_.emplace_back(projections[i].observation->id, bbs.poses[matchings[i].bbInd()].position.x, matchings[i].dist());
+      currentUpdates_.emplace_back(projections[i].data->obs->id, bbs.poses[matchings[i].bbInd()].position.x, matchings[i].dist(), projections[i].data->centroid_cam.x);
     } else {
-      currentUpdates_.emplace_back(projections[i].observation->id);
+      currentUpdates_.emplace_back(projections[i].data->obs->id);
     }
   }
   std::cout << '[' << which << "]: Matchings Size: " << matchings_num << std::endl;
@@ -209,7 +209,7 @@ void Matcher::autocalib(const std::vector<Projection> &projections, const geomet
   req.request.obsCentroids.reserve(matchings.size());
   for (size_t projInd = 0; projInd < matchings.size(); projInd++) {
     if (bool(matchings[projInd])) {
-      req.request.obsCentroids.push_back(projections[projInd].observation->temp.centroid_local.gmPoint());
+      req.request.obsCentroids.push_back(projections[projInd].data->obs->temp.centroid_local.gmPoint());
       req.request.bbsCentroids.push_back(bbCentroidAndHeight(bbs.poses[matchings[projInd].bbInd()]).gmPoint());
     }
   }
@@ -249,7 +249,7 @@ Matcher::Matcher(const Params::Matcher &params, ros::NodeHandle *const &nh, cons
   extrinsics_.linear() = rotationQ.toRotationMatrix();
   extrinsics_.translation() = Eigen::Vector3d(params_.extrinsics.translation.data());
 
-  // Subscribers declaration
+  // Calibration service instantiation
   calibSrv_ = nh->serviceClient<ccat::CalibReq>(params_.service_addr);
 }
 
@@ -269,13 +269,15 @@ void Matcher::run(const std::vector<Observation::Ptr> &observations, const geome
     return;
   }
   if (bbs->poses.size() == 0) return;
-  
+
   if (calibrated_) hasValidData_ = true;
 
   // 1: Transform the observations (pcls AND centroid) to camera space.
-  for (const Observation::Ptr &obs : observations) {
-    pcl::transformPointCloud(*obs->temp.pcl, *obs->temp.pcl, extrinsics_);
-    obs->temp.centroid_camera = obs->temp.centroid_local.transformed(extrinsics_);
+  std::vector<ProjectionData> projDatas(observations.size());
+  for (size_t i = 0; i < observations.size(); i++) {
+    projDatas[i].obs = observations[i];
+    projDatas[i].centroid_cam = observations[i]->temp.centroid_local.transformed(extrinsics_);
+    pcl::transformPointCloud(*observations[i]->temp.pcl_local, *projDatas[i].pcl_cam, extrinsics_);
   }
 
   // 2: Filter the points so only the points in front of the camera (visibles)
@@ -284,20 +286,24 @@ void Matcher::run(const std::vector<Observation::Ptr> &observations, const geome
   pcl::ConditionAnd<PCLPoint>::Ptr xFilterCond(pcl::make_shared<pcl::ConditionAnd<PCLPoint>>());
   xFilterCond->addComparison(pcl::make_shared<pcl::FieldComparison<PCLPoint>>("x", pcl::ComparisonOps::GE, 0.0));
   xFilter.setCondition(xFilterCond);
-  for (const Observation::Ptr &obs : observations) {
-    xFilter.setInputCloud(obs->temp.pcl);
-    xFilter.filter(*obs->temp.pcl);
+  for (const ProjectionData &projData : projDatas) {
+    xFilter.setInputCloud(projData.pcl_cam);
+    xFilter.filter(*projData.pcl_cam);
   }
 
   // If debug, publish all the cones in camera coordinates
-  if (params_.debug)
-    vis_.publishPCLs(observations);
+  if (params_.debug) {
+    std::vector<PCL::Ptr> pcls(projDatas.size());
+    std::transform(projDatas.begin(), projDatas.end(), pcls.begin(),
+                   [](const ProjectionData &pd) -> PCL::Ptr { return pd.pcl_cam; });
+    vis_.publishPCLs(pcls);
+  }
 
   // 3: Create the projections of the points, that is:
   // - Transform all the points to image space
   // - Save only the observations which have at least one point on the image
   std::vector<Projection> projs;
-  projections(observations, projs);
+  projections(projDatas, projs);
 
   // 4: Now obtain the matches
   std::vector<Matching> matchings;
@@ -311,10 +317,10 @@ void Matcher::run(const std::vector<Observation::Ptr> &observations, const geome
     std::transform(projs.begin(), projs.end(), projsToPaint.begin(),
                    [](const Projection &p) -> std::pair<std::vector<cv::Point2d>, cv::Point2d> { return {p.projPoints, p.imageCentroid}; });
     vis_.publishProjectedImg(projsToPaint, *bbs, matchings);
-    
+
     std::vector<geometry_msgs::Point> projsCentroids(projs.size());
     std::transform(projs.begin(), projs.end(), projsCentroids.begin(),
-                   [](const Projection &p) -> geometry_msgs::Point { return p.observation->temp.centroid_local.gmPoint(); });
+                   [](const Projection &p) -> geometry_msgs::Point { return p.data->obs->temp.centroid_local.gmPoint(); });
     vis_.publishMatchingMarkers(projsCentroids, *bbs, matchings);
   }
 

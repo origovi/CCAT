@@ -38,9 +38,9 @@
 #include "modules/Matcher/MatcherVis.hpp"
 #include "modules/Matcher/Matching.hpp"
 #include "structures/ConeUpdate.hpp"
-#include "utils/KDTree.hpp"
 #include "structures/Observation.hpp"
 #include "structures/Params.hpp"
+#include "utils/KDTree.hpp"
 #include "utils/conversions.hpp"
 
 using PCLPoint = pcl::PointXYZI;
@@ -59,6 +59,13 @@ class Matcher {
   enum Which { LEFT,
                RIGHT };
 
+ private:
+  struct ProjectionData {
+    Observation::Ptr obs;
+    Point centroid_cam;
+    PCL::Ptr pcl_cam = pcl::make_shared<PCL>();
+  };
+
   /**
    * @brief Represents a projected Observation, it contains:
    * - A pointer to the Observation it represents.
@@ -66,10 +73,7 @@ class Matcher {
    * - The 2D centroid of the Observation pointcloud in image space.
    */
   struct Projection {
-    /**
-     * @brief A std::shared_ptr pointer to the Observation it represents.
-     */
-    Observation::Ptr observation;
+    const ProjectionData *data;
 
     /**
      * @brief All the points of the Observation in 2D in image space.
@@ -82,7 +86,6 @@ class Matcher {
     cv::Point2d imageCentroid;
   };
 
- private:
 
   /* -------------------------- Private Attributes -------------------------- */
 
@@ -147,7 +150,7 @@ class Matcher {
    * camera sees (at least one point in front of the camera),
    * in image coordinates
    */
-  void projections(const std::vector<Observation::Ptr> &observations, std::vector<Projection> &projs);
+  void projections(const std::vector<ProjectionData> &projDatas, std::vector<Projection> &projs);
 
   /**
    * @brief Calculates the height that would have a YOLO-BB of an Observation
@@ -201,9 +204,8 @@ class Matcher {
   void computeMatchings(const std::vector<Projection> &projections, const geometry_msgs::PoseArray &bbs, std::vector<Matching> &matchings);
 
   void updateData(const std::vector<Projection> &projections, const geometry_msgs::PoseArray &bbs, const std::vector<Matching> &matchings);
-  
-  void autocalib(const std::vector<Projection> &projections, const geometry_msgs::PoseArray &bbs, const std::vector<Matching> &matchings);
 
+  void autocalib(const std::vector<Projection> &projections, const geometry_msgs::PoseArray &bbs, const std::vector<Matching> &matchings);
 
   /**
    * @brief Constructs and returns a Point containing the BB centroid

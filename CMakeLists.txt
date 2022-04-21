@@ -4,8 +4,18 @@ project(ccat)
 add_compile_options(-std=c++17)
 set(CMAKE_BUILD_TYPE "Release")
 
+message(STATUS "Welcome to CCAT :)")
 find_package(catkin REQUIRED COMPONENTS roscpp std_msgs as_msgs pcl_ros tf tf_conversions eigen_conversions image_transport cv_bridge dynamic_reconfigure)
 find_package(Eigen3 REQUIRED)
+
+find_package(OpenMP REQUIRED)
+if(OPENMP_FOUND)
+  message(STATUS "OPENMP FOUND")
+  set(OpenMP_FLAGS ${OpenMP_CXX_FLAGS})
+  set(OpenMP_LIBS gomp)
+else()
+  message(WARNING "OPENMP NOT FOUND, multithreaded disabled")
+endif()
 
 add_service_files(
   FILES
@@ -19,7 +29,6 @@ generate_messages(
   geometry_msgs
 )
 
-
 generate_dynamic_reconfigure_options(
   cfg/Extrinsics.cfg
 )
@@ -27,6 +36,7 @@ generate_dynamic_reconfigure_options(
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ${PROJECT_NAME}
+  DEPENDS OpenMP
 )
 
 include_directories(
@@ -39,6 +49,7 @@ add_executable(${PROJECT_NAME}_exec
 )
 
 add_library(${PROJECT_NAME}
+  src/Manager.cpp
   src/modules/Preproc/Preproc.cpp
   src/modules/Matcher/Matcher.cpp
   src/modules/Matcher/MatcherVis.cpp
@@ -54,22 +65,12 @@ add_library(${PROJECT_NAME}
   src/utils/KDTree.cpp
   src/utils/Visualization.cpp
   src/utils/Time.cpp
-  src/Manager.cpp
 )
 
 add_dependencies(${PROJECT_NAME}_exec as_msgs_generate_messages_cpp)
-add_dependencies(${PROJECT_NAME} as_msgs_generate_messages_cpp)
 
-target_link_libraries(${PROJECT_NAME}_exec ${catkin_LIBRARIES} ${PROJECT_NAME})
-target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenMP_LIBS})
+target_link_libraries(${PROJECT_NAME}_exec ${PROJECT_NAME})
 
-install(
-  TARGETS ${PROJECT_NAME}
-  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION}
-)
-install(
-  DIRECTORY include/${PROJECT_NAME}_lib/
-  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-)
+# Mandatory for parallelism (OpenMP)
+target_compile_options(${PROJECT_NAME} PRIVATE ${OpenMP_FLAGS})

@@ -16,9 +16,6 @@ using PCLPoint = pcl::PointXYZI;
 using PCL = pcl::PointCloud<PCLPoint>;
 
 class Observation {
- protected:
-  static Point computeCentroid(const PCL &pcl);
-
  public:
   using Ptr = std::shared_ptr<Observation>;
   using ConstPtr = std::shared_ptr<const Observation>;
@@ -28,14 +25,14 @@ class Observation {
    */
 
   Observation();
-  Observation(const PCL &pcl, const float &confidence, const size_t &id);
-  Observation(const PCL &pcl, const Point &centroid, const float &confidence, const size_t &id);
+  Observation(const PCL &pcl_global, const float &confidence, const size_t &id);
+  Observation(const PCL &pcl_global, const Point &centroid, const float &confidence, const size_t &id);
   Observation(const as_msgs::Observation &obs, const size_t &id);
   Observation(const std::list<const Observation*> &observationsToMean);
 
   /* PUBLIC ATTRIBUTES */
 
-  PCL pcl;
+  PCL pcl_global;
 
   Point centroid_global;
 
@@ -45,8 +42,7 @@ class Observation {
    */
   struct {
     Point centroid_local;
-    Point centroid_camera;
-    PCL::Ptr pcl = pcl::make_shared<PCL>();
+    PCL::Ptr pcl_local = pcl::make_shared<PCL>();
     double distToCar;
   } temp;
 
@@ -55,7 +51,7 @@ class Observation {
   size_t id;
 
   /* PUBLIC METHODS */
-
+  static Point computeCentroid(const PCL &pcl);
   void updateLocal(const Eigen::Affine3d &carTf);
 };
 
