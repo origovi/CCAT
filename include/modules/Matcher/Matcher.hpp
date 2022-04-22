@@ -41,7 +41,6 @@
 #include "structures/Observation.hpp"
 #include "structures/Params.hpp"
 #include "utils/KDTree.hpp"
-#include "utils/conversions.hpp"
 
 using PCLPoint = pcl::PointXYZI;
 using PCL = pcl::PointCloud<PCLPoint>;
@@ -61,6 +60,7 @@ class Matcher {
 
  private:
   struct ProjectionData {
+    size_t obsInd;
     Observation::Ptr obs;
     Point centroid_cam;
     PCL::Ptr pcl_cam = pcl::make_shared<PCL>();
@@ -68,7 +68,7 @@ class Matcher {
 
   /**
    * @brief Represents a projected Observation, it contains:
-   * - A pointer to the Observation it represents.
+   * - A pointer to the correspondant ProjectionData.
    * - All the points of the Observation in 2D in image space.
    * - The 2D centroid of the Observation pointcloud in image space.
    */
@@ -104,10 +104,6 @@ class Matcher {
    */
   bool calibrated_;
 
-  /**
-   * @brief The result of matching the BB(s) with the Observations
-   * of last iteration.
-   */
   std::vector<ConeUpdate> currentUpdates_;
 
   /**
@@ -203,7 +199,7 @@ class Matcher {
    */
   void computeMatchings(const std::vector<Projection> &projections, const geometry_msgs::PoseArray &bbs, std::vector<Matching> &matchings);
 
-  void updateData(const std::vector<Projection> &projections, const geometry_msgs::PoseArray &bbs, const std::vector<Matching> &matchings);
+  void updateData(const std::vector<Projection> &projs, const std::vector<ProjectionData> &projDatas, const geometry_msgs::PoseArray &bbs, const std::vector<Matching> &matchings);
 
   void autocalib(const std::vector<Projection> &projections, const geometry_msgs::PoseArray &bbs, const std::vector<Matching> &matchings);
 

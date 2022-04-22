@@ -176,22 +176,42 @@ void Matcher::computeMatchings(const std::vector<Projection> &projections, const
   }
 }
 
-void Matcher::updateData(const std::vector<Projection> &projections, const geometry_msgs::PoseArray &bbs, const std::vector<Matching> &matchings) {
+void Matcher::updateData(const std::vector<Projection> &projs, const std::vector<ProjectionData> &projDatas, const geometry_msgs::PoseArray &bbs, const std::vector<Matching> &matchings) {
   currentUpdates_.clear();
-  currentUpdates_.reserve(matchings.size());
+  currentUpdates_.reserve(projDatas.size());
   size_t matchings_num = 0;
 
   // Create the ConeUpdate(s):
   // 1. Every camera-seen Observation will be update through a ConeUpdate
   // 2. The ConeUpdate will have the type of the BB that it's matched to
-  // 3. TODO: if any Observation is very close and does not have a match,
-  //    delete it
+  // 3. If the ConeUpdate Observation does not have any matching, None type will
+  //    be assigned, and distToClosestMatch will be included.
+  std::vector<Point> matchedCentroids;
+  std::vector<bool> matchedObservations(projDatas.size(), false);
+  matchedCentroids.reserve(matchings.size());
+  // Add the ConeUpdate(s) that have a valid matching to the currentUpdates_
+  // attribute, also add the centroids to a vector so then we can get
+  // the closest matched observation for every non-matched one.
   for (size_t i = 0; i < matchings.size(); i++) {
     if (bool(matchings[i])) {
+      matchedObservations[projs[i].data->obsInd] = true;
       matchings_num++;
-      currentUpdates_.emplace_back(projections[i].data->obs->id, bbs.poses[matchings[i].bbInd()].position.x, matchings[i].dist(), projections[i].data->centroid_cam.x);
-    } else {
-      currentUpdates_.emplace_back(projections[i].data->obs->id);
+      currentUpdates_.emplace_back(projs[i].data->obs->id, bbs.poses[matchings[i].bbInd()].position.x, matchings[i].dist(), projs[i].data->centroid_cam.x);
+      matchedCentroids.push_back(projs[i].data->obs->centroid_global);
+    }
+  }
+  // Create a KDTree with (only) the matched observation centroids, and for
+  // every non-matched observation
+  KDTree obsWithMatchKDT(matchedCentroids);
+  for (size_t i = 0; i < projDatas.size(); i++) {
+    if (!matchedObservations[i]) {
+      KDTData<size_t> closestMatchingInd = obsWithMatchKDT.nearest_index(projDatas[i].obs->centroid_global);
+      if (bool(closestMatchingInd)) {
+        currentUpdates_.emplace_back(projDatas[i].obs->id, projDatas[i].centroid_cam.x, Point::dist(projDatas[i].obs->centroid_global, matchedCentroids[*closestMatchingInd]));
+
+      } else {
+        currentUpdates_.emplace_back(projDatas[i].obs->id, projDatas[i].centroid_cam.x);
+      }
     }
   }
   std::cout << '[' << which << "]: Matchings Size: " << matchings_num << std::endl;
@@ -226,7 +246,6 @@ void Matcher::autocalib(const std::vector<Projection> &projections, const geomet
     extrinsics_.linear() = rotationQ.toRotationMatrix();
     extrinsics_.translation() = Eigen::Vector3d(req.response.translation.data());
     //calibrated_ = true;
-    ROS_INFO_STREAM("prova");
     ROS_INFO("[ccat]: Matcher calibrated succesfully!");
   } else {
     ROS_ERROR("[ccat]: Failed to call Calibration Service");
@@ -275,6 +294,7 @@ void Matcher::run(const std::vector<Observation::Ptr> &observations, const geome
   // 1: Transform the observations (pcls AND centroid) to camera space.
   std::vector<ProjectionData> projDatas(observations.size());
   for (size_t i = 0; i < observations.size(); i++) {
+    projDatas[i].obsInd = i;
     projDatas[i].obs = observations[i];
     projDatas[i].centroid_cam = observations[i]->temp.centroid_local.transformed(extrinsics_);
     pcl::transformPointCloud(*observations[i]->temp.pcl_local, *projDatas[i].pcl_cam, extrinsics_);
@@ -325,7 +345,7 @@ void Matcher::run(const std::vector<Observation::Ptr> &observations, const geome
   }
 
   // 5: Update the cones data
-  updateData(projs, *bbs, matchings);
+  updateData(projs, projDatas, *bbs, matchings);
 
   // 6: Autocalibrate
   autocalib(projs, *bbs, matchings);

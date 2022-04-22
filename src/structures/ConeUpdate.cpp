@@ -4,14 +4,12 @@
  * CONSTRUCTORS
  */
 
-ConeUpdate::ConeUpdate(const size_t &id) : id(id), matchingDist(CONE_DEFAULT_MATCH_DIST), distToCameraPlane(CONE_DEFAULT_DIST_TO_CAM_PLANE) {
+ConeUpdate::ConeUpdate(const size_t &id, const double &distToCameraPlane, const double &distToClosestMatch) : id(id), matchingDist(CONE_DEFAULT_MATCH_DIST), distToCameraPlane(distToCameraPlane), distToClosestMatch(distToClosestMatch) {
   this->type = NONE;
-  this->operation = ADD;
 }
 
-ConeUpdate::ConeUpdate(const size_t &id, const uint8_t &bbType, const double &matchingDist, const double &distToCameraPlane) : id(id), matchingDist(matchingDist), distToCameraPlane(distToCameraPlane) {
+ConeUpdate::ConeUpdate(const size_t &id, const uint8_t &bbType, const double &matchingDist, const double &distToCameraPlane) : id(id), matchingDist(matchingDist), distToCameraPlane(distToCameraPlane), distToClosestMatch(CONE_DEFAULT_DIST_TO_CLOSEST_MATCH) {
   setTypeFromAsMsgs(bbType);
-  this->operation = ADD;
 }
 
 /**

@@ -1,9 +1,10 @@
 #include "utils/conversions.hpp"
 
 void cvrs::as_obsVec2ObsVec(const std::vector<as_msgs::Observation>& observations, std::vector<Observation> &res) {
-  res.resize(observations.size());
+  res.clear();
+  res.reserve(observations.size());
   for (size_t i = 0; i < observations.size(); ++i) {
-    res[i] = Observation(observations[i], i);
+    res.emplace_back(observations[i]);
   }
 }
 

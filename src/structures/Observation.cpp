@@ -4,11 +4,11 @@
  * CONSTRUCTORS
  */
 Observation::Observation() : confidence(0.0) {}
-Observation::Observation(const PCL &pcl_global, const float &confidence, const size_t &id) : pcl_global(pcl_global), confidence(confidence), id(id) {
+Observation::Observation(const PCL &pcl_global, const float &confidence) : pcl_global(pcl_global), confidence(confidence) {
   centroid_global = computeCentroid(this->pcl_global);
 }
 
-Observation::Observation(const as_msgs::Observation &obs, const size_t &id) : centroid_global(Point(obs.centroid)), confidence(obs.confidence), id(id) {
+Observation::Observation(const as_msgs::Observation &obs) : centroid_global(obs.centroid), confidence(obs.confidence) {
   pcl::fromROSMsg(obs.cloud, pcl_global);
   // invert y and z axis
   for (auto &p : pcl_global.points) {
@@ -19,7 +19,6 @@ Observation::Observation(const as_msgs::Observation &obs, const size_t &id) : ce
 
 Observation::Observation(const std::list<const Observation*> &observationsToMean) : confidence(0.0) {
   for (auto it = observationsToMean.begin(); it != observationsToMean.end(); it++) {
-    if (it == observationsToMean.begin()) id = (*it)->id;
     pcl_global += (*it)->pcl_global;
     confidence += (*it)->confidence;
   }

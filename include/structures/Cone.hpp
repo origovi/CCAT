@@ -20,6 +20,7 @@ class Cone {
 
   std::vector<Consideration> heap_;
   ConeUpdate::Type type_;
+  bool valid_;
 
   static double getHeuristic(const ConeUpdate &coneUpdate, const double &distSqToOldPos);
 
@@ -47,6 +48,7 @@ class Cone {
 
   /* Getters */
   const Point &position_global() const;
+  const bool &valid() const;
   as_msgs::Cone getASCone() const;
 };
 

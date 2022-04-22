@@ -14,10 +14,10 @@ Manager::~Manager() {
 }
 
 void Manager::run() const {
+  Time::tick("main");
   #pragma omp parallel
   #pragma omp single
   {
-    Time::tick("main");
     preproc->run(lastRunObs_, lastRunOdom_, lastRunLeftBBs_, lastRunRightBBs_);
     tracker->accumulate(preproc->getData());
     calibQueue_->callAvailable();
@@ -29,10 +29,10 @@ void Manager::run() const {
     merger->run(matcherL->getData(), matcherR->getData());
     tracker->run(merger->getData());
     std::cout << std::endl;
-    Time::tock("main");
     //preproc->reset();
     if (tracker->hasData()) conesPub_.publish(tracker->getData());
   }
+  Time::tock("main");
 
   if (params_.static_calib and lastRunLeftBBs_ != nullptr and lastRunRightBBs_ != nullptr)
     calibLoop();

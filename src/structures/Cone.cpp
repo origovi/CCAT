@@ -4,9 +4,10 @@
  * CONSTRUCTORS
  */
 
-Cone::Cone(const Observation &obs, const size_t &id) : id(id) {
-  heap_.reserve(20);
+Cone::Cone(const Observation &obs, const size_t &id) : id(id), valid_(true) {
+  heap_.reserve(10);
   this->obs = std::make_shared<Observation>(obs);
+  this->obs->id = id;
   type_ = ConeUpdate::NONE;
 }
 
@@ -24,9 +25,11 @@ double Cone::getHeuristic(const ConeUpdate &coneUpdate, const double &distSqToOl
  */
 
 void Cone::update(const ConeUpdate &coneUpdate) {
-  if (coneUpdate.type == ConeUpdate::NONE) return;
+  if (coneUpdate.type == ConeUpdate::NONE) {
+    return;
+  }
   double coneHeuristic = getHeuristic(coneUpdate, 0.0);
-  if (heap_.size() >= 20) {
+  if (heap_.size() >= 10) {
     // Find the element with min heuristic in the vector
     // and replace it if the heuristic is bigger.
     auto min_it = std::min_element(heap_.begin(), heap_.end(), Consideration::comparer);
@@ -61,7 +64,8 @@ void Cone::update(const ConeUpdate &coneUpdate) {
 }
 
 void Cone::updateObs(const Observation &obs, const double &distSqToPosition) {
-  *this->obs = obs;
+  this->obs = std::make_shared<Observation>(obs);
+  this->obs->id = id;
 }
 
 void Cone::updateLocal(const Eigen::Affine3d &carTf) {
@@ -72,6 +76,10 @@ void Cone::updateLocal(const Eigen::Affine3d &carTf) {
 
 const Point &Cone::position_global() const {
   return obs->centroid_global;
+}
+
+const bool &Cone::valid() const {
+  return valid_;
 }
 
 as_msgs::Cone Cone::getASCone() const {

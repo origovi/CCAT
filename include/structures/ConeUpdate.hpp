@@ -8,7 +8,7 @@
 #include "structures/Observation.hpp"
 
 #define CONE_DEFAULT_MATCH_DIST 1e10
-#define CONE_DEFAULT_DIST_TO_CAM_PLANE 1e10
+#define CONE_DEFAULT_DIST_TO_CLOSEST_MATCH 1e10
 
 class ConeUpdate {
  public:
@@ -22,15 +22,12 @@ class ConeUpdate {
               BIGORANGE,
               NONE } type;
 
-  enum Operation { ADD,
-                   DELETE } operation;
-  
   /**
    * CONSTRUCTORS AND DESTRUCTOR
    */
 
   // No matching update
-  ConeUpdate(const size_t &id);
+  ConeUpdate(const size_t &id, const double &distToCameraPlane, const double &distToClosestMatch = CONE_DEFAULT_DIST_TO_CLOSEST_MATCH);
 
   // Matched update
   ConeUpdate(const size_t &id, const uint8_t &bbType, const double &matchingDist, const double &distToCameraPlane);
@@ -40,6 +37,8 @@ class ConeUpdate {
   const double matchingDist;
 
   const double distToCameraPlane;
+
+  const double distToClosestMatch;
 
   /**
    * PUBLIC METHODS

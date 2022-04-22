@@ -44,7 +44,8 @@ void Tracker::init(const Params::Tracker &params) {
 void Tracker::accumulate(const std::pair<const std::vector<Observation> &, const Eigen::Affine3d &> &data) {
   if (cones_.empty()) {
     for (const Observation &obs : data.first) {
-      cones_.emplace_hint(cones_.end(), std::piecewise_construct, std::forward_as_tuple(lastId_), std::forward_as_tuple(obs, lastId_++));
+      cones_.emplace_hint(cones_.end(), std::piecewise_construct, std::forward_as_tuple(lastId_), std::forward_as_tuple(obs, lastId_));
+      lastId_++;
     }
   } else {
     std::vector<Point> points(cones_.size());
@@ -61,7 +62,8 @@ void Tracker::accumulate(const std::pair<const std::vector<Observation> &, const
       }
       // We have observed a new cone
       else {
-        cones_.emplace_hint(cones_.end(), std::piecewise_construct, std::forward_as_tuple(lastId_), std::forward_as_tuple(obs, lastId_++));
+        cones_.emplace_hint(cones_.end(), std::piecewise_construct, std::forward_as_tuple(lastId_), std::forward_as_tuple(obs, lastId_));
+        lastId_++;
       }
     }
   }
@@ -78,6 +80,12 @@ void Tracker::run(const std::vector<ConeUpdate> &coneUpdates) {
     if (it != cones_.end()) {
       it->second.update(coneUpdate);
     }
+    else {
+      std::cout << "achtung" << std::endl << coneUpdate.id << std::endl;
+      for (auto it = cones_.begin(); it != cones_.end(); it++) {
+        std::cout << it->first << std::endl;
+      } 
+    }
   }
 
   // Update the current cones
@@ -85,7 +93,7 @@ void Tracker::run(const std::vector<ConeUpdate> &coneUpdates) {
   currentCones_.cones.clear();
   currentCones_.cones.reserve(cones_.size());
   for (std::map<size_t, Cone>::iterator it = cones_.begin(); it != cones_.end(); it++) {
-    currentCones_.cones.push_back(it->second.getASCone());
+    if (it->second.valid()) currentCones_.cones.push_back(it->second.getASCone());
   }
 }
 

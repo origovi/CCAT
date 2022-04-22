@@ -1,8 +1,8 @@
 #include <as_msgs/ConeArray.h>
 #include <ccat/ExtrinsicsConfig.h>
 #include <dynamic_reconfigure/server.h>
-#include <ros/ros.h>
 #include <ros/callback_queue.h>
+#include <ros/ros.h>
 
 #include "Manager.hpp"
 #include "structures/Params.hpp"
@@ -16,6 +16,10 @@ int main(int argc, char **argv) {
   Visualization::init(nh);
 
   Manager &manager = Manager::getInstance();
+
+  // Create another callback queue only for the camera extrinsics dyn_cfg
+  // This way we can call dyn_cfg callbacks while being inside a
+  // (default)GlobalCallbackQueue callback.
   ros::CallbackQueue calibQueue;
 
   /* Subscribers */

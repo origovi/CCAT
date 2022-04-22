@@ -11,7 +11,7 @@ common:
   
 manager:
   buffer_temp_mem:            1.0                                 # float (s)
-  static_calib:               true                               # bool, makes a loop of matcher(s) run with same information, useful to calibrate when no input is received
+  static_calib:               false                               # bool, makes a loop of matcher(s) run with same information, useful to calibrate when no input is received
 
 preproc:
   cluster_dist:               1.5                                 # double (m)
@@ -26,7 +26,7 @@ matcher:
     image_height:             768                                 # int (px)
     cone_height:              0.325                               # double (m)
     cone_width:               0.228                               # double (m)
-    colors_in_projected:      true                                # bool, the color of the cone points and the BB(s) will be the same in a matching
+    colors_in_projected:      false                                # bool, the color of the cone points and the BB(s) will be the same in a matching
     service_addr:             "/AS/P/calibration"
   topics:
     output:
