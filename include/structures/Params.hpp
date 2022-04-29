@@ -39,6 +39,7 @@ struct Params {
   struct Manager {
     float bufferTempMem;
     bool static_calib;
+    bool publish_only_odom_update;
   } manager;
 
   /**

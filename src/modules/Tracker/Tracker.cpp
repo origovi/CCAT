@@ -81,10 +81,7 @@ void Tracker::run(const std::vector<ConeUpdate> &coneUpdates) {
       it->second.update(coneUpdate);
     }
     else {
-      std::cout << "achtung" << std::endl << coneUpdate.id << std::endl;
-      for (auto it = cones_.begin(); it != cones_.end(); it++) {
-        std::cout << it->first << std::endl;
-      } 
+      ROS_ERROR("Invalid ConeUpdate ID");
     }
   }
 

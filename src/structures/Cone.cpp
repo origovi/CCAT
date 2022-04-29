@@ -16,7 +16,7 @@ Cone::Cone(const Observation &obs, const size_t &id) : id(id), valid_(true) {
  */
 
 double Cone::getHeuristic(const ConeUpdate &coneUpdate, const double &distSqToOldPos) {
-  std::cout << coneUpdate.type << " " << coneUpdate.matchingDist << " " << coneUpdate.distToCameraPlane << " " << coneUpdate.matchingDist * coneUpdate.distToCameraPlane << " " << 1 / (coneUpdate.matchingDist * coneUpdate.distToCameraPlane) << std::endl;
+  //std::cout << coneUpdate.type << " " << coneUpdate.matchingDist << " " << coneUpdate.distToCameraPlane << " " << coneUpdate.matchingDist * coneUpdate.distToCameraPlane << " " << 1 / (coneUpdate.matchingDist * coneUpdate.distToCameraPlane) << std::endl;
   return 1.0 / (coneUpdate.matchingDist * coneUpdate.distToCameraPlane);
 }
 

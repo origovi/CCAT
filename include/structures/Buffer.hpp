@@ -13,7 +13,8 @@ inline ros::Duration abs(const ros::Duration &d) { return ros::Duration().fromNS
 template <typename BufferedType>
 class Buffer : private std::deque<std::pair<BufferedType, ros::Time>> {
  private:
-  using Parent = std::deque<std::pair<BufferedType, ros::Time>>;
+  using Elem = std::pair<BufferedType, ros::Time>;
+  using Parent = std::deque<Elem>;
   const ros::Duration tempMem_;
 
  public:
@@ -30,11 +31,11 @@ class Buffer : private std::deque<std::pair<BufferedType, ros::Time>> {
     return Parent::front().second;
   }
 
-  const BufferedType &oldestElem() const {
+  const Elem &oldestElem() const {
     if (empty()) {
       throw std::runtime_error("Buffer is empty, cannot get element");
     }
-    return Parent::front().first;
+    return Parent::front();
   }
 
   const ros::Time &newestStamp() const {
@@ -44,11 +45,11 @@ class Buffer : private std::deque<std::pair<BufferedType, ros::Time>> {
     return Parent::back().second;
   }
 
-  const BufferedType &newestElem() const {
+  const Elem &newestElem() const {
     if (empty()) {
       throw std::runtime_error("Buffer is empty, cannot get element");
     }
-    return Parent::back().first;
+    return Parent::back();
   }
 
   ros::Duration avgDelay() const {
@@ -62,12 +63,38 @@ class Buffer : private std::deque<std::pair<BufferedType, ros::Time>> {
   }
 
   template <typename BufferedType2>
-  bool isSynchWith(const Buffer<BufferedType2> &buffer) const {
-    ros::Duration diff = BuffF::abs(newestStamp() - buffer.newestStamp());
-    if (avgFreq() > buffer.avgFreq()) {
-      return diff < avgDelay() * 0.5;
+  bool isSynchWith(const Buffer<BufferedType2> &buffer, BufferedType &thisSyncElem, BufferedType2 &syncElem) const {
+    ros::Duration diff;
+
+    Elem thisElem;
+    std::pair<BufferedType2, ros::Time> elem;
+    // this has a newer element
+    if (this->newestStamp() >= buffer.newestStamp()) {
+      elem = buffer.newestElem();
+      thisElem = this->elemClosestTo(elem.second);
+      diff = BuffF::abs(thisElem.second - elem.second);
+    }
+    // buffer (parameter) has a newer element
+    else {
+      thisElem = this->newestElem();
+      elem = buffer.elemClosestTo(thisElem.second);
+      diff = BuffF::abs(elem.second - thisElem.second);
+    }
+
+    if (this->avgFreq() > buffer.avgFreq()) {
+      if (diff < this->avgDelay() * 0.5) {
+        thisSyncElem = thisElem.first;
+        syncElem = elem.first;
+        return true;
+      }
+      return false;
     } else {
-      return diff < buffer.avgDelay() * 0.5;
+      if (diff < buffer.avgDelay() * 0.5) {
+        thisSyncElem = thisElem.first;
+        syncElem = elem.first;
+        return true;
+      }
+      return false;
     }
   }
 
@@ -75,12 +102,12 @@ class Buffer : private std::deque<std::pair<BufferedType, ros::Time>> {
     Parent::emplace_back(element, stamp);
 
     // Readjust
-    while (newestStamp() - oldestStamp() > tempMem_) {
+    while (!empty() and BuffF::abs(newestStamp() - oldestStamp()) > tempMem_) {
       Parent::pop_front();
     }
   }
 
-  const BufferedType &elemJustBefore(const ros::Time &stamp) const {
+  const Elem &elemJustBefore(const ros::Time &stamp) const {
     if (empty()) {
       throw std::runtime_error("Buffer is empty, cannot get any element");
     }
@@ -90,12 +117,12 @@ class Buffer : private std::deque<std::pair<BufferedType, ros::Time>> {
 
     for (auto it = Parent::crbegin(); it != Parent::crend(); it++) {
       if (it->second < stamp) {
-        return it->first;
+        return *it;
       }
     }
   }
 
-  const BufferedType &elemJustAfter(const ros::Time &stamp) const {
+  const Elem &elemJustAfter(const ros::Time &stamp) const {
     if (empty()) {
       throw std::runtime_error("Buffer is empty, cannot get any element");
     }
@@ -105,29 +132,29 @@ class Buffer : private std::deque<std::pair<BufferedType, ros::Time>> {
 
     for (auto it = Parent::cbegin(); it != Parent::cend(); it++) {
       if (it->second > stamp) {
-        return it->first;
+        return *it;
       }
     }
   }
 
-  const BufferedType &elemClosestTo(const ros::Time &stamp) const {
+  const Elem &elemClosestTo(const ros::Time &stamp) const {
     if (empty()) {
       throw std::runtime_error("Buffer is empty, cannot get any element");
     }
 
-    ros::Duration closestDiff = BuffF::abs(Parent::back().second - stamp);
-    const BufferedType &closestElem = Parent::back().first;
+    auto closestElem = Parent::crbegin();
+    ros::Duration closestDiff = BuffF::abs(closestElem->second - stamp);
 
     for (auto it = Parent::crbegin(); it != Parent::crend(); it++) {
       ros::Duration diff = BuffF::abs(it->second - stamp);
       if (diff <= closestDiff) {
         closestDiff = diff;
-        closestElem = it->first;
+        closestElem = it;
       } else {
         break;
       }
     }
-    return closestElem;
+    return *closestElem;
   }
 };
 

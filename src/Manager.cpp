@@ -38,41 +38,160 @@ void Manager::run() const {
     calibLoop();
 }
 
-void Manager::runIfPossible() {
-  // If some of the data is missing or we haven't got enough, return
-  if (latestObs_ == nullptr or !buffHasValidData(*buffOdom_)) return;
-  nav_msgs::Odometry::ConstPtr odom = buffOdom_->newestElem();
+void Manager::runIfPossible(const Update &update) {
+  if (mode_ == NONE) return;
+  
+  nav_msgs::Odometry::ConstPtr odom;
   geometry_msgs::PoseArray::ConstPtr leftBBs, rightBBs;
-
-  if (buffHasValidData(*buffRightBBs_) and buffRightBBs_->isSynchWith(*buffOdom_)) {
-    rightBBs = buffRightBBs_->newestElem();
+  
+  if (update == OBS) {
+    odom = lastRunOdom_;
+    leftBBs = lastRunLeftBBs_;
+    rightBBs = lastRunRightBBs_;
   }
-  if (buffHasValidData(*buffLeftBBs_) and buffLeftBBs_->isSynchWith(*buffOdom_)) {
-    leftBBs = buffLeftBBs_->newestElem();
-  }
-
-  // Don't run same BBs with same Observations and Odom twice
-  if (odom == lastRunOdom_ and latestObs_ == lastRunObs_) {
-    if (lastRunLeftBBs_ == leftBBs) {
-      leftBBs = nullptr;
+  else {
+    if (mode_ == L_ONLY) {
+      if (update != ODOM) return;
+      ROS_WARN("L_ONLY");
+      odom = buffOdom_->newestElem().first;
     }
-    if (lastRunRightBBs_ == rightBBs) {
-      rightBBs = nullptr;
+    else if (mode_ == L_CAM) {
+      if (update == R_BBS) return;
+      if (!buffOdom_->isSynchWith(*buffLeftBBs_, odom, leftBBs)) return;
+      if (lastRunOdom_ != nullptr and lastRunOdom_->header.stamp > odom->header.stamp) return;
+      if (odom == lastRunOdom_ and leftBBs == lastRunLeftBBs_) return;
+      ROS_WARN("L_CAM");
     }
-    // No need to re-run:
-    // 1. odom and observations are same &&
-    // 2. BBs are either the same or not in synch
-    if (rightBBs == nullptr and leftBBs == nullptr) return;
+    else if (mode_ == R_CAM) {
+      if (update == L_BBS) return;
+      if (!buffOdom_->isSynchWith(*buffRightBBs_, odom, rightBBs)) return;
+      if (lastRunOdom_ != nullptr and lastRunOdom_->header.stamp > odom->header.stamp) return;
+      if (odom == lastRunOdom_ and rightBBs == lastRunRightBBs_) return;
+      ROS_WARN("R_CAM");
+    }
+    // BOTH_CAMS
+    else {
+      nav_msgs::Odometry::ConstPtr odomLeft, odomRight;
+      geometry_msgs::PoseArray::ConstPtr rightBBsTemp, leftBBsTemp;
+      bool rightSync = buffOdom_->isSynchWith(*buffRightBBs_, odomRight, rightBBsTemp);
+      bool leftSync = buffOdom_->isSynchWith(*buffLeftBBs_, odomLeft, leftBBsTemp);
+      if (!leftSync and !rightSync) return;
+      if (leftSync and rightSync) {
+        if (odomRight == odomLeft) {
+          odom = odomRight;
+          leftBBs = leftBBsTemp;
+          rightBBs = rightBBsTemp;
+        }
+        else if (odomRight->header.stamp > odomLeft->header.stamp) {
+          if (lastRunOdom_ != nullptr and odomLeft->header.stamp > lastRunOdom_->header.stamp) {
+            odom = odomLeft;
+            leftBBs = leftBBsTemp;
+          } else {
+            odom = odomRight;
+            rightBBs = rightBBsTemp;
+          }
+        }
+        else {
+          if (lastRunOdom_ != nullptr and odomRight->header.stamp > lastRunOdom_->header.stamp) {
+            odom = odomRight;
+            rightBBs = rightBBsTemp;
+          } else {
+            odom = odomLeft;
+            leftBBs = leftBBsTemp;
+          }
+        }
+      } else if (leftSync) {
+        odom = odomLeft;
+        leftBBs = leftBBsTemp;
+      } else {
+        odom = odomRight;
+        rightBBs = rightBBsTemp;
+      }
+      if (lastRunOdom_ != nullptr and lastRunOdom_->header.stamp > odom->header.stamp) return;
+    }
   }
 
-  // Update latest vars
-  lastRunOdom_ = odom;
+
   lastRunObs_ = latestObs_;
-  lastRunLeftBBs_ = leftBBs;
+  lastRunOdom_ = odom;
   lastRunRightBBs_ = rightBBs;
+  lastRunLeftBBs_ = leftBBs;
 
   // Run
   run();
+  // // If some of the data is missing or we haven't got enough, return
+  // if (latestObs_ == nullptr or !buffHasValidData(*buffOdom_)) return;
+  // nav_msgs::Odometry::ConstPtr odom;
+  // geometry_msgs::PoseArray::ConstPtr leftBBs, rightBBs;
+
+  // bool leftSync = false, rightSync = false;
+  // nav_msgs::Odometry::ConstPtr odomLeft, odomRight;
+  // if (buffHasValidData(*buffRightBBs_)) {
+  //   rightSync = buffRightBBs_->isSynchWith(*buffOdom_, rightBBs, odomRight);
+  // }
+  // if (buffHasValidData(*buffLeftBBs_)) {
+  //   leftSync = buffLeftBBs_->isSynchWith(*buffOdom_, leftBBs, odomLeft);
+  // }
+
+  // if (!params_.publish_only_odom_update and !leftSync and !rightSync and latestObs_ == lastRunObs_) return;
+
+  // if (leftSync and rightSync) {
+  //   if (odomLeft == odomRight) {
+  //     odom = odomLeft;
+  //   } else if (odomLeft->header.stamp > odomRight->header.stamp) {
+  //     odom = odomLeft;
+  //     rightBBs = nullptr;
+  //   } else {
+  //     odom = odomRight;
+  //     leftBBs = nullptr;
+  //   }
+  // } else if (leftSync) {
+  //   odom = odomLeft;
+  // } else if (rightSync) {
+  //   odom = odomRight;
+  // } else {
+  //   odom = buffOdom_->newestElem().first;
+  // }
+
+  // // Don't run same BBs with same Observations and Odom twice
+  // if (odom == lastRunOdom_ and latestObs_ == lastRunObs_) {
+  //   if (lastRunValidLeftBBs_ == leftBBs) {
+  //     leftBBs = nullptr;
+  //   }
+  //   if (lastRunValidRightBBs_ == rightBBs) {
+  //     rightBBs = nullptr;
+  //   }
+  //   // No need to re-run:
+  //   // 1. odom and observations are same &&
+  //   // 2. BBs are either the same or not in synch
+  //   if (rightBBs == nullptr and leftBBs == nullptr) return;
+  // }
+
+  // // Update latest vars
+  // lastRunOdom_ = odom;
+  // lastRunObs_ = latestObs_;
+  // if (leftBBs != nullptr) lastRunValidLeftBBs_ = leftBBs;
+  // if (rightBBs != nullptr) lastRunValidRightBBs_ = rightBBs;
+  // lastRunLeftBBs_ = leftBBs;
+  // lastRunRightBBs_ = rightBBs;
+}
+
+void Manager::updateMode() {
+  mode_ = NONE;
+  if (latestObs_ != nullptr) {
+    if (buffHasValidData(*buffOdom_)) {
+      mode_ = L_ONLY;
+      if (buffHasValidData(*buffLeftBBs_)) {
+        mode_ = L_CAM;
+        if (buffHasValidData(*buffRightBBs_)) {
+          mode_ = BOTH_CAMS;
+        }
+      }
+      else if (buffHasValidData(*buffLeftBBs_)) {
+        mode_ = R_CAM;
+      }
+    }
+  }
 }
 
 void Manager::calibLoop() const {
@@ -131,18 +250,22 @@ void Manager::init(ros::NodeHandle *const nh, const Params &params,
 
 void Manager::leftBBsCallback(const geometry_msgs::PoseArray::ConstPtr &bbs) {
   buffLeftBBs_->add(bbs, bbs->header.stamp);
-  runIfPossible();
+  updateMode();
+  runIfPossible(L_BBS);
 }
 
 void Manager::rightBBsCallback(const geometry_msgs::PoseArray::ConstPtr &bbs) {
   buffRightBBs_->add(bbs, bbs->header.stamp);
-  runIfPossible();
+  updateMode();
+  runIfPossible(R_BBS);
 }
 void Manager::odomCallback(const nav_msgs::Odometry::ConstPtr &odom) {
   buffOdom_->add(odom, odom->header.stamp);
-  runIfPossible();
+  updateMode();
+  runIfPossible(ODOM);
 }
 void Manager::obsCallback(const as_msgs::ObservationArray::ConstPtr &observations) {
   latestObs_ = observations;
-  runIfPossible();
+  updateMode();
+  runIfPossible(OBS);
 }

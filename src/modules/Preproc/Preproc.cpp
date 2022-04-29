@@ -66,9 +66,10 @@ void Preproc::reset() {
 /* Callbacks */
 
 void Preproc::run(const as_msgs::ObservationArray::ConstPtr &newObservations,
-                       const nav_msgs::Odometry::ConstPtr &odom,
-                       const geometry_msgs::PoseArray::ConstPtr &leftDetections,
-                       const geometry_msgs::PoseArray::ConstPtr &rightDetections) {
+                  const nav_msgs::Odometry::ConstPtr &odom,
+                  const geometry_msgs::PoseArray::ConstPtr &leftDetections,
+                  const geometry_msgs::PoseArray::ConstPtr &rightDetections) {
+  currentObservations_.clear();
   tf::poseMsgToEigen(odom->pose.pose, carTf_);
 
   // Invert y and z axis
@@ -85,8 +86,12 @@ void Preproc::run(const as_msgs::ObservationArray::ConstPtr &newObservations,
   leftBBs_ = leftDetections;
   rightBBs_ = rightDetections;
 
-  if (newObservations->observations.empty())
+  if (newObservations == nullptr)
+    return;
+  if (newObservations->observations.empty()) {
     ROS_WARN("Reading empty observations");
+    return;
+  }
 
   // Only preprocess observations if they are different from the lasts
   if (newObservations->header.stamp != currentObservationsStamp_) {

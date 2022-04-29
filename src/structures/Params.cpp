@@ -19,6 +19,7 @@ Params::Params(const ros::NodeHandle &nh) {
   
   nh.param<float>("/AS/P/ccat/manager/buffer_temp_mem", manager.bufferTempMem, 1.0);
   nh.param<bool>("/AS/P/ccat/manager/static_calib", manager.static_calib, false);
+  nh.param<bool>("/AS/P/ccat/manager/publish_only_odom_update", manager.publish_only_odom_update, false);
   
   /**
    * PREPROC

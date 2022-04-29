@@ -6,9 +6,9 @@
 #include <dynamic_reconfigure/server.h>
 #include <geometry_msgs/PoseArray.h>
 #include <nav_msgs/Odometry.h>
-#include <ros/ros.h>
-#include <ros/callback_queue.h>
 #include <omp.h>
+#include <ros/callback_queue.h>
+#include <ros/ros.h>
 
 #include "modules/Matcher/Matcher.hpp"
 #include "modules/Merger/Merger.hpp"
@@ -43,11 +43,24 @@ class Manager {
   nav_msgs::Odometry::ConstPtr lastRunOdom_;
   as_msgs::ObservationArray::ConstPtr lastRunObs_;
   geometry_msgs::PoseArray::ConstPtr lastRunLeftBBs_, lastRunRightBBs_;
+  geometry_msgs::PoseArray::ConstPtr lastRunValidLeftBBs_, lastRunValidRightBBs_;
+
+  enum Mode { NONE,
+              L_ONLY,
+              L_CAM,
+              R_CAM,
+              BOTH_CAMS } mode_;
+
+  enum Update { OBS,
+                ODOM,
+                L_BBS,
+                R_BBS };
 
   /* ---------------------------- Private Methods --------------------------- */
   void run() const;
-  void runIfPossible();
+  void runIfPossible(const Update &update);
   void calibLoop() const;
+  void updateMode();
   template <typename BufferedType>
   bool buffHasValidData(const Buffer<BufferedType> &buff) const;
 

@@ -14,7 +14,7 @@ if(OPENMP_FOUND)
   set(OpenMP_FLAGS ${OpenMP_CXX_FLAGS})
   set(OpenMP_LIBS gomp)
 else()
-  message(WARNING "OPENMP NOT FOUND, multithreaded disabled")
+  message(WARNING "OPENMP NOT FOUND, multithread disabled")
 endif()
 
 add_service_files(
@@ -67,7 +67,7 @@ add_library(${PROJECT_NAME}
   src/utils/Time.cpp
 )
 
-add_dependencies(${PROJECT_NAME}_exec as_msgs_generate_messages_cpp)
+add_dependencies(${PROJECT_NAME} as_msgs_generate_messages_cpp)
 
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenMP_LIBS})
 target_link_libraries(${PROJECT_NAME}_exec ${PROJECT_NAME})
