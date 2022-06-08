@@ -78,6 +78,10 @@ Point Matcher::bbCentroidAndHeight(const geometry_msgs::Pose &bb) {
   //return Point((bb.orientation.x + bb.orientation.z) / 2, (bb.orientation.y + bb.orientation.w) / 2, 0.0);
 }
 
+bool Matcher::isMatchingPossible(const double &matchingDist, const double &bbHeight) const {
+  return matchingDist/bbHeight < params_.max_match_search_dist;
+}
+
 void Matcher::matchBestFit(const size_t &bbInd, const geometry_msgs::PoseArray &bbs, const KDTree &projsKDT, std::vector<Matching> &matches, std::vector<std::set<size_t>> &projsToExclude) const {
   Point bbCentroidAndHeightP(bbCentroidAndHeight(bbs.poses[bbInd]));
   bool isFirst = true;
@@ -126,7 +130,7 @@ void Matcher::matchGreedy(const size_t &projInd, const std::vector<Projection> &
   double dist = Point::dist(projCentroidAndBBHeight, bbPointInd->first);
   std::cout << "bb height: " << projCentroidAndBBHeight.z << " " << bbPointInd->first.z << std::endl;
   // No matching is possible
-  if (!bool(bbPointInd) or dist > params_.max_match_search_dist) {
+  if (!bool(bbPointInd) or !isMatchingPossible(dist, projCentroidAndBBHeight.z)) {
     return;
   }
 
@@ -259,14 +263,6 @@ void Matcher::autocalib(const std::vector<Projection> &projections, const geomet
 Matcher::Matcher(const Params::Matcher &params, ros::NodeHandle *const &nh, const Which &which) : which(which), params_(params), intrinsics_(params.intrinsics.data()), vis_(params) {
   hasValidData_ = false;
   calibrated_ = false;
-
-  // Extrinsics
-  Eigen::Quaterniond rotationQ(
-      Eigen::AngleAxisd(params_.extrinsics.euler_angles[0], Eigen::Vector3d::UnitX()) *
-      Eigen::AngleAxisd(params_.extrinsics.euler_angles[1], Eigen::Vector3d::UnitY()) *
-      Eigen::AngleAxisd(params_.extrinsics.euler_angles[2], Eigen::Vector3d::UnitZ()));
-  extrinsics_.linear() = rotationQ.toRotationMatrix();
-  extrinsics_.translation() = Eigen::Vector3d(params_.extrinsics.translation.data());
 
   // Calibration service instantiation
   calibSrv_ = nh->serviceClient<ccat::CalibReq>(params_.service_addr);

@@ -10,18 +10,18 @@ dictitems:
         state: []
       parent: 0
       pitch: -0.03
-      roll: 1.6336281798666925
+      roll: 0.04
       state: true
       type: ''
-      x: 0.48
+      x: 0.94
       y: 0.6
-      yaw: 0.98
-      z: 0.84
+      yaw: 0.62
+      z: -0.7
     state: []
   pitch: -0.03
-  roll: 1.6336281798666925
-  x: 0.48
+  roll: 0.04
+  x: 0.94
   y: 0.6
-  yaw: 0.98
-  z: 0.84
+  yaw: 0.62
+  z: -0.7
 state: []

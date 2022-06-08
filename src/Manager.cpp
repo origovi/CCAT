@@ -119,61 +119,6 @@ void Manager::runIfPossible(const Update &update) {
 
   // Run
   run();
-  // // If some of the data is missing or we haven't got enough, return
-  // if (latestObs_ == nullptr or !buffHasValidData(*buffOdom_)) return;
-  // nav_msgs::Odometry::ConstPtr odom;
-  // geometry_msgs::PoseArray::ConstPtr leftBBs, rightBBs;
-
-  // bool leftSync = false, rightSync = false;
-  // nav_msgs::Odometry::ConstPtr odomLeft, odomRight;
-  // if (buffHasValidData(*buffRightBBs_)) {
-  //   rightSync = buffRightBBs_->isSynchWith(*buffOdom_, rightBBs, odomRight);
-  // }
-  // if (buffHasValidData(*buffLeftBBs_)) {
-  //   leftSync = buffLeftBBs_->isSynchWith(*buffOdom_, leftBBs, odomLeft);
-  // }
-
-  // if (!params_.publish_only_odom_update and !leftSync and !rightSync and latestObs_ == lastRunObs_) return;
-
-  // if (leftSync and rightSync) {
-  //   if (odomLeft == odomRight) {
-  //     odom = odomLeft;
-  //   } else if (odomLeft->header.stamp > odomRight->header.stamp) {
-  //     odom = odomLeft;
-  //     rightBBs = nullptr;
-  //   } else {
-  //     odom = odomRight;
-  //     leftBBs = nullptr;
-  //   }
-  // } else if (leftSync) {
-  //   odom = odomLeft;
-  // } else if (rightSync) {
-  //   odom = odomRight;
-  // } else {
-  //   odom = buffOdom_->newestElem().first;
-  // }
-
-  // // Don't run same BBs with same Observations and Odom twice
-  // if (odom == lastRunOdom_ and latestObs_ == lastRunObs_) {
-  //   if (lastRunValidLeftBBs_ == leftBBs) {
-  //     leftBBs = nullptr;
-  //   }
-  //   if (lastRunValidRightBBs_ == rightBBs) {
-  //     rightBBs = nullptr;
-  //   }
-  //   // No need to re-run:
-  //   // 1. odom and observations are same &&
-  //   // 2. BBs are either the same or not in synch
-  //   if (rightBBs == nullptr and leftBBs == nullptr) return;
-  // }
-
-  // // Update latest vars
-  // lastRunOdom_ = odom;
-  // lastRunObs_ = latestObs_;
-  // if (leftBBs != nullptr) lastRunValidLeftBBs_ = leftBBs;
-  // if (rightBBs != nullptr) lastRunValidRightBBs_ = rightBBs;
-  // lastRunLeftBBs_ = leftBBs;
-  // lastRunRightBBs_ = rightBBs;
 }
 
 void Manager::updateMode() {

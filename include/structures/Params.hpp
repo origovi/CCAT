@@ -69,10 +69,6 @@ struct Params {
     float cone_height, cone_width;
     bool colors_in_projected;
     std::string service_addr;
-    struct {
-      std::vector<double> translation;
-      std::vector<double> euler_angles;
-    } extrinsics;
     std::vector<float> intrinsics;
     struct {
       struct {
@@ -80,7 +76,7 @@ struct Params {
       struct {
         std::string projected;
         std::string pcl;
-        std::string matched_markers;
+        std::string instant_markers;
       } output;
     } topics;
   } matcherL, matcherR;
@@ -100,12 +96,13 @@ struct Params {
   struct Tracker {
     bool debug;
     double same_cone_max_distSq;
-    bool fancy_markers;
+    bool fancy_markers, show_markers_id, markers_on_ground;
     struct {
       struct {
       } input;
       struct {
-        std::string markersBaseLink, markersGlobal;
+        std::string mergedMarkers;
+        std::string finalMarkersBaseLink, finalMarkersGlobal;
       } output;
     } topics;
   } tracker;

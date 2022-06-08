@@ -85,6 +85,10 @@ void Tracker::run(const std::vector<ConeUpdate> &coneUpdates) {
     }
   }
 
+  if (params_.debug) {
+    vis_.publishMergedMarkers(coneUpdates, cones_);
+  }
+
   // Update the current cones
   currentCones_.stamp = ros::Time::now();
   currentCones_.cones.clear();
@@ -111,7 +115,7 @@ std::vector<Observation::Ptr> Tracker::getObservations() const {
 const as_msgs::ConeArray &Tracker::getData() {
   // Publish markers, if debug
   if (params_.debug) {
-    vis_.publishMarkers(currentCones_);
+    vis_.publishFinalMarkers(currentCones_);
   }
   return currentCones_;
 }

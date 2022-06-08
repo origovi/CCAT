@@ -61,12 +61,12 @@ add_library(${PROJECT_NAME}
   src/structures/Observation.cpp
   src/structures/ConeUpdate.cpp
   src/structures/Params.cpp
-  src/utils/conversions.cpp
   src/utils/KDTree.cpp
   src/utils/Visualization.cpp
   src/utils/Time.cpp
 )
 
+add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_gencpp)
 add_dependencies(${PROJECT_NAME} as_msgs_generate_messages_cpp)
 
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenMP_LIBS})

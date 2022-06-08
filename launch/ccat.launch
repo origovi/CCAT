@@ -1,12 +1,14 @@
 <launch>
   <rosparam param="use_sim_time">true</rosparam>
-  <node name="ccat" pkg="ccat" type="ccat_exec" output="screen" ns="/AS/P">
-    <rosparam command="load" file="$(find ccat)/config/ccat.yml" />
-    <rosparam command="load" file="$(find ccat)/config/calibration/extrinsics_left.yml" ns="extrinsics/left" />
-    <rosparam command="load" file="$(find ccat)/config/calibration/extrinsics_right.yml" ns="extrinsics/right" />
-    <rosparam command="load" file="$(find ccat)/config/calibration/intrinsics_left.yml" ns="intrinsics/left" />
-    <rosparam command="load" file="$(find ccat)/config/calibration/intrinsics_right.yml" ns="intrinsics/right" />
-  </node>
+  <group ns="/AS/P" >
+    <node name="ccat" pkg="ccat" type="ccat_exec" output="screen" >
+      <rosparam command="load" file="$(find ccat)/config/ccat.yml" />
+      <rosparam command="load" file="$(find ccat)/config/calibration/intrinsics_left.yml" ns="intrinsics/left" />
+      <rosparam command="load" file="$(find ccat)/config/calibration/intrinsics_right.yml" ns="intrinsics/right" />
+    </node>
+    <node name="dyn_rec_load_left_extrinsics" ns="ccat" pkg="dynamic_reconfigure" type="dynparam" args="load /AS/P/ccat/cfg_left_cam $(find ccat)/config/calibration/extrinsics_left.yaml" />
+    <node name="dyn_rec_load_right_extrinsics" ns="ccat" pkg="dynamic_reconfigure" type="dynparam" args="load /AS/P/ccat/cfg_right_cam $(find ccat)/config/calibration/extrinsics_right.yaml" />
+  </group>
 </launch>
 
 <!-- launch-prefix="gdb -ex run -args" -->

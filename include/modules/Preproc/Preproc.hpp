@@ -16,7 +16,6 @@
 #include "structures/Params.hpp"
 #include "structures/Point.hpp"
 #include "utils/KDTree.hpp"
-#include "utils/conversions.hpp"
 
 class Preproc {
  private:

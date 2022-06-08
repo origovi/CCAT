@@ -23,11 +23,21 @@ std::list<const Observation *> Preproc::possiblesSamePoint(const size_t &pointIn
 }
 
 void Preproc::preprocess(const as_msgs::ObservationArray &observations) {
+  // Convert as_msgs::Observation to Observation
   std::vector<Observation> allObs;
-  cvrs::as_obsVec2ObsVec(observations.observations, allObs);
+  allObs.reserve(observations.observations.size());
+  for (const as_msgs::Observation &obs : observations.observations) {
+    allObs.emplace_back(obs);
+  }
+  
+  // Create a centroid vector to build a KDTree
   std::vector<Point> allCentroids;
-  cvrs::obsVec2PointVec(allObs, allCentroids);
+  allCentroids.reserve(allObs.size());
+  for (const Observation &obs : allObs) {
+    allCentroids.push_back(obs.centroid_global);
+  }
   KDTree observationsKDT(allCentroids);
+  
   std::vector<bool> visited(observations.observations.size(), false);
   std::vector<Observation> res;
   res.reserve(allObs.size());
@@ -70,6 +80,10 @@ void Preproc::run(const as_msgs::ObservationArray::ConstPtr &newObservations,
                   const geometry_msgs::PoseArray::ConstPtr &leftDetections,
                   const geometry_msgs::PoseArray::ConstPtr &rightDetections) {
   currentObservations_.clear();
+  if (odom == nullptr) {
+    ROS_ERROR("Odom is nullptr, aborting");
+    return;
+  }
   tf::poseMsgToEigen(odom->pose.pose, carTf_);
 
   // Invert y and z axis

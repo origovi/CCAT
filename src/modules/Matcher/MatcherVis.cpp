@@ -7,8 +7,8 @@ std_msgs::ColorRGBA MatcherVis::BBColorToStd(const double &BBColor) {
   res.a = 1.0;
   if (BBColor == 0) {
     res.r = 1.0;
-    res.b = 1.0;
-    res.g = 0.2;
+    res.g = 1.0;
+    res.b = 0.2;
   } else if (BBColor == 1) {
     res.r = 0.0;
     res.g = 0.0;
@@ -16,7 +16,7 @@ std_msgs::ColorRGBA MatcherVis::BBColorToStd(const double &BBColor) {
   } else {
     res.r = 1.0;
     res.g = 0.56;
-    res.r = 0.0;
+    res.b = 0.0;
   }
   return res;
 }
@@ -107,7 +107,7 @@ void MatcherVis::publishMatchingMarkers(const std::vector<geometry_msgs::Point> 
                                         const geometry_msgs::PoseArray &bbs,
                                         const std::vector<Matching> &matchings) {
   visualization_msgs::MarkerArray ma;
-  ma.markers.reserve(matchings.size());
+  ma.markers.reserve(1 + matchings.size());
   visualization_msgs::Marker m;
   m.pose.orientation.w = 1.0;
   m.scale.x = 1.0;
@@ -117,6 +117,11 @@ void MatcherVis::publishMatchingMarkers(const std::vector<geometry_msgs::Point> 
   m.header.frame_id = "base_link";
   m.header.stamp = ros::Time::now();
   size_t id = 0;
+  m.action = visualization_msgs::Marker::DELETEALL;
+  m.id = id++;
+  ma.markers.push_back(m);
+  m.action = visualization_msgs::Marker::ADD;
+
   for (size_t i = 0; i < matchings.size(); i++) {
     if (bool(matchings[i])) {
       m.id = id++;
@@ -126,5 +131,5 @@ void MatcherVis::publishMatchingMarkers(const std::vector<geometry_msgs::Point> 
     }
   }
 
-  pubMA(params_.topics.output.matched_markers).publish(ma);
+  pubMA(params_.topics.output.instant_markers).publish(ma);
 }

@@ -157,6 +157,8 @@ class Matcher {
    */
   inline double bbHeightFromZ(const double &z) const;
 
+  inline bool isMatchingPossible(const double &matchingDist, const double &bbHeight) const;
+
   /**
    * @brief Matches the BB with index = \a bbInd with the closest
    * Matcher::Projection in such a way that each BB is matched only once.

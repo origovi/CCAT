@@ -31,8 +31,8 @@ void Merger::run(const std::vector<ConeUpdate> &conesLeft, const std::vector<Con
 
   // We know that two cones will be the same because they will have the same
   // observation-id, we only need to find those that have the same id.
-  // The Cone with a better (smaller) dist will prevail, all other metrics
-  // will be ignored.
+  // The Cone with a better (smaller) matching dist will prevail, all other
+  // metrics will be ignored.
   for (const ConeUpdate& coneUpdate : conesLeft) {
     auto it = projCones.find(coneUpdate.id);
     if (it == projCones.end()) {
