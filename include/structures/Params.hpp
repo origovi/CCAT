@@ -65,10 +65,11 @@ struct Params {
     std::string match_type;
     double max_match_search_dist;
     double max_match_real_dist;
+    double min_dist_car_able_to_match;
     int image_width, image_height;
     float cone_height, cone_width;
     bool colors_in_projected;
-    std::string service_addr;
+    std::string autocalib_service_addr;
     std::vector<float> intrinsics;
     struct {
       struct {
@@ -97,6 +98,7 @@ struct Params {
     bool debug;
     double same_cone_max_distSq;
     bool fancy_markers, show_markers_id, markers_on_ground;
+    int heap_size;
     struct {
       struct {
       } input;

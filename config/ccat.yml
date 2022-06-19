@@ -1,55 +1,57 @@
 common:
-  frequency:                  10
+  frequency:                    10
   topics:
     input:
-      observations:           "/AS/P/pcl_filtering/observations"
-      odometry:               "/limovelo/state"
-      left_detections:        "/camera/left/detections"
-      right_detections:       "/camera/right/detections"
+      observations:             "/AS/P/pcl_filtering/observations"
+      odometry:                 "/limovelo/state"
+      left_detections:          "/camera/left/detections"
+      right_detections:         "/camera/right/detections"
     output:
-      cones:                  "/AS/P/ccat/cones"
+      cones:                    "/AS/P/ccat/cones"
   
 manager:
-  buffer_temp_mem:            1.0                                 # float (s)
-  static_calib:               false                               # bool, makes a loop of matcher(s) run with same information, useful to calibrate when no input is received
-  publish_only_odom_update:   false                               # bool, whether of not to publish markers ONLY when Odom is updated
+  buffer_temp_mem:              1.0                                 # float (s)
+  static_calib:                 false                               # bool, makes a loop of matcher(s) run with same information, useful to calibrate when no input is received
+  publish_only_odom_update:     false                               # bool, whether of not to publish markers ONLY when Odom is updated
 
 preproc:
-  cluster_dist:               1.5                                 # double (m)
+  cluster_dist:                 1.5                                 # double (m)
 
 matcher:
   common:
-    debug:                    true                                # bool, enables debugging tools such as markers publishing
-    match_type:               "best fit"                          # string, ["greedy", "best fit"]
-    max_match_bb_dist:        100.0                               # double (px)
-    max_match_real_dist:      50.0                                # double (m)
-    image_width:              1024                                # int (px)
-    image_height:             768                                 # int (px)
-    cone_height:              0.325                               # double (m)
-    cone_width:               0.228                               # double (m)
-    colors_in_projected:      false                                # bool, the color of the cone points and the BB(s) will be the same in a matching
-    service_addr:             "/AS/P/calibration"
+    debug:                      true                                # bool, enables debugging tools such as markers publishing
+    match_type:                 "best fit"                          # string, ["greedy", "best fit"]
+    max_match_bb_dist:          100.0                               # double (px)
+    max_match_real_dist:        50.0                                # double (m)
+    min_dist_car_able_to_match: 5.0                                 # double (m), minimum distance of cones (to camera plane) under which cameras are not able to detect cones
+    image_width:                1024                                # int (px)
+    image_height:               768                                 # int (px)
+    cone_height:                0.325                               # double (m)
+    cone_width:                 0.228                               # double (m), unused
+    colors_in_projected:        false                               # bool, the color of the cone points and the BB(s) will be the same in a matching
+    autocalib_service_addr:     "/AS/P/calibration"
   topics:
     output:
-      left_projected:         "/AS/P/ccat/projected/left"
-      right_projected:        "/AS/P/ccat/projected/right"
-      left_pcl:               "/AS/P/ccat/pcl/left"
-      right_pcl:              "/AS/P/ccat/pcl/right"
-      left_instant_markers:   "/AS/P/ccat/markers/instant/left"
-      right_instant_markers:  "/AS/P/ccat/markers/instant/right"
+      left_projected:           "/AS/P/ccat/projected/left"
+      right_projected:          "/AS/P/ccat/projected/right"
+      left_pcl:                 "/AS/P/ccat/pcl/left"
+      right_pcl:                "/AS/P/ccat/pcl/right"
+      left_instant_markers:     "/AS/P/ccat/markers/instant/left"
+      right_instant_markers:    "/AS/P/ccat/markers/instant/right"
 
 tracker:
-  debug:                      true
-  same_cone_max_distSq:       0.8                                 # double (m²), if a new observation is less than sqrt(this)
-                                                                  # away from a cone, it will be assumed they are the same cone
-  fancy_markers:              true                                # bool, draws markers as real cones (instead of cylinders),
-                                                                  # a source of devel/setup.bash must be done before opening rviz
-  show_markers_id:            true
-  markers_on_ground:          true                                # bool, chooses whether or not to paint markers with z=0 or with real z
+  debug:                        true
+  same_cone_max_distSq:         0.8                                 # double (m²), if a new observation is less than sqrt(this)
+                                                                    # away from a cone, it will be assumed they are the same cone
+  heap_size:                    7                                  # int, specifies how big is the statistical polling vector; the smaller this is the quicker the cones will change its type
+  fancy_markers:                true                                # bool, draws markers as real cones (instead of cylinders),
+                                                                    # a source of devel/setup.bash must be done before opening rviz
+  show_markers_id:              true
+  markers_on_ground:            true                                # bool, chooses whether or not to paint markers with z=0 or with real z
   topics:
     output:
       markers:
-        merged:               "/AS/P/ccat/markers/instant/merged"
+        merged:                 "/AS/P/ccat/markers/instant/merged"
         final:
-          baseLink:           "/AS/P/ccat/markers/final/base_link"
-          global:             "/AS/P/ccat/markers/final/global"
+          baseLink:             "/AS/P/ccat/markers/final/base_link"
+          global:               "/AS/P/ccat/markers/final/global"

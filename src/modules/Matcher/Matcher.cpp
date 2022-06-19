@@ -191,30 +191,29 @@ void Matcher::updateData(const std::vector<Projection> &projs, const std::vector
   // 3. If the ConeUpdate Observation does not have any matching, None type will
   //    be assigned, and distToClosestMatch will be included.
   std::vector<Point> matchedCentroids;
-  std::vector<bool> matchedObservations(projDatas.size(), false);
   matchedCentroids.reserve(matchings.size());
   // Add the ConeUpdate(s) that have a valid matching to the currentUpdates_
   // attribute, also add the centroids to a vector so then we can get
   // the closest matched observation for every non-matched one.
   for (size_t i = 0; i < matchings.size(); i++) {
     if (bool(matchings[i])) {
-      matchedObservations[projs[i].data->obsInd] = true;
+      std::cout << '[' << which << "] " << projs[i].data->obs->id << ' ' << bbs.poses[matchings[i].bbInd()].position.x << std::endl;
       matchings_num++;
-      currentUpdates_.emplace_back(projs[i].data->obs->id, bbs.poses[matchings[i].bbInd()].position.x, matchings[i].dist(), projs[i].data->centroid_cam.x);
+      currentUpdates_.emplace_back(projs[i].data->obs->id, bbs.poses[matchings[i].bbInd()].position.x, bbs.poses[matchings[i].bbInd()].position.z, matchings[i].dist(), projs[i].data->centroid_cam.x);
       matchedCentroids.push_back(projs[i].data->obs->centroid_global);
     }
   }
   // Create a KDTree with (only) the matched observation centroids, and for
   // every non-matched observation
   KDTree obsWithMatchKDT(matchedCentroids);
-  for (size_t i = 0; i < projDatas.size(); i++) {
-    if (!matchedObservations[i]) {
-      KDTData<size_t> closestMatchingInd = obsWithMatchKDT.nearest_index(projDatas[i].obs->centroid_global);
+  for (size_t i = 0; i < projs.size(); i++) {
+    if (!bool(matchings[i]) and projs[i].data->centroid_cam.x >= params_.min_dist_car_able_to_match) {
+      KDTData<size_t> closestMatchingInd = obsWithMatchKDT.nearest_index(projs[i].data->obs->centroid_global);
       if (bool(closestMatchingInd)) {
-        currentUpdates_.emplace_back(projDatas[i].obs->id, projDatas[i].centroid_cam.x, Point::dist(projDatas[i].obs->centroid_global, matchedCentroids[*closestMatchingInd]));
+        currentUpdates_.emplace_back(projs[i].data->obs->id, projs[i].data->centroid_cam.x, Point::dist(projs[i].data->obs->centroid_global, matchedCentroids[*closestMatchingInd]));
 
       } else {
-        currentUpdates_.emplace_back(projDatas[i].obs->id, projDatas[i].centroid_cam.x);
+        currentUpdates_.emplace_back(projs[i].data->obs->id, projs[i].data->centroid_cam.x);
       }
     }
   }
@@ -265,7 +264,7 @@ Matcher::Matcher(const Params::Matcher &params, ros::NodeHandle *const &nh, cons
   calibrated_ = false;
 
   // Calibration service instantiation
-  calibSrv_ = nh->serviceClient<ccat::CalibReq>(params_.service_addr);
+  calibSrv_ = nh->serviceClient<ccat::CalibReq>(params_.autocalib_service_addr);
 }
 
 void Matcher::cfgCallback(const ccat::ExtrinsicsConfig &config, uint32_t level) {

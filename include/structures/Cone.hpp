@@ -11,20 +11,35 @@
 
 class Cone {
  private:
-  struct Consideration {
+  struct ConsiderationM {
     ConeUpdate::Type type;
     double heuristic;
-    Consideration(const ConeUpdate::Type &type, const double &heuristic) : type(type), heuristic(heuristic) {}
+    ConsiderationM(const ConeUpdate::Type &type, const double &heuristic) : type(type), heuristic(heuristic) {}
+    static bool comparer(const ConsiderationM &c1, const ConsiderationM &c2) { return c1.heuristic < c2.heuristic; }
+  };
+
+  struct Consideration {
+    bool isMatched;
+    double heuristic;
+    Consideration(const bool &isMatched, const double &heuristic) : isMatched(isMatched), heuristic(heuristic) {}
     static bool comparer(const Consideration &c1, const Consideration &c2) { return c1.heuristic < c2.heuristic; }
   };
 
+  std::vector<ConsiderationM> heapM_;
   std::vector<Consideration> heap_;
-  ConeUpdate::Type type_;
-  bool valid_;
+  
+  struct {
+    ConeUpdate::Type type;
+    float confidence;
+    bool valid;
+  } metadata_;
 
+  static double getHeuristicM(const ConeUpdate &coneUpdate, const double &distSqToOldPos);
   static double getHeuristic(const ConeUpdate &coneUpdate, const double &distSqToOldPos);
+  void updateMetadata();
 
  public:
+  static int heapSize;
   /**
    * CONSTRUCTOR
    */

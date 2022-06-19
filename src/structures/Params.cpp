@@ -36,12 +36,13 @@ Params::Params(const ros::NodeHandle &nh) {
   nh.param<std::string>("/AS/P/ccat/matcher/common/match_type", matcherL.match_type, "greedy");
   nh.param<double>("/AS/P/ccat/matcher/common/max_match_search_dist", matcherL.max_match_search_dist, 50.0);
   nh.param<double>("/AS/P/ccat/matcher/common/max_match_real_dist", matcherL.max_match_real_dist, 50.0);
+  nh.param<double>("/AS/P/ccat/matcher/common/min_dist_car_able_to_match", matcherL.min_dist_car_able_to_match, 5.0);
   nh.param<int>("/AS/P/ccat/matcher/common/image_width", matcherL.image_width, 1024);
   nh.param<int>("/AS/P/ccat/matcher/common/image_height", matcherL.image_height, 768);
   nh.param<float>("/AS/P/ccat/matcher/common/cone_width", matcherL.cone_width, 0.228);
   nh.param<float>("/AS/P/ccat/matcher/common/cone_height", matcherL.cone_height, 0.325);
   nh.param<bool>("/AS/P/ccat/matcher/common/colors_in_projected", matcherL.colors_in_projected, false);
-  nh.param<std::string>("/AS/P/ccat/matcher/common/service_addr", matcherL.service_addr, "/AS/P/calibration");
+  nh.param<std::string>("/AS/P/ccat/matcher/common/autocalib_service_addr", matcherL.autocalib_service_addr, "/AS/P/calibration");
   matcherR = matcherL;
 
   // Different Part
@@ -60,6 +61,7 @@ Params::Params(const ros::NodeHandle &nh) {
   nh.param<bool>("/AS/P/ccat/tracker/fancy_markers", tracker.fancy_markers, false);
   nh.param<bool>("/AS/P/ccat/tracker/show_markers_id", tracker.show_markers_id, false);
   nh.param<bool>("/AS/P/ccat/tracker/markers_on_ground", tracker.markers_on_ground, true);
+  nh.param<int>("/AS/P/ccat/tracker/heap_size", tracker.heap_size, 10);
   nh.param<std::string>("/AS/P/ccat/tracker/topics/output/markers_baseLink", tracker.topics.output.mergedMarkers, "/AS/P/ccat/markers/instant/merged");
   nh.param<std::string>("/AS/P/ccat/tracker/topics/output/markers_baseLink", tracker.topics.output.finalMarkersBaseLink, "/AS/P/ccat/markers/final/base_link");
   nh.param<std::string>("/AS/P/ccat/tracker/topics/output/markers_global", tracker.topics.output.finalMarkersGlobal, "/AS/P/ccat/markers/final/global");

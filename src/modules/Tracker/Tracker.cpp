@@ -39,6 +39,7 @@ Tracker &Tracker::getInstance() {
 void Tracker::init(const Params::Tracker &params) {
   params_ = params;
   vis_.init(params);
+  Cone::heapSize = params_.heap_size;
 }
 
 void Tracker::accumulate(const std::pair<const std::vector<Observation> &, const Eigen::Affine3d &> &data) {
