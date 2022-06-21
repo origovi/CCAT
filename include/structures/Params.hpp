@@ -98,7 +98,10 @@ struct Params {
     bool debug;
     double same_cone_max_distSq;
     bool fancy_markers, show_markers_id, markers_on_ground;
-    int heap_size;
+    struct Cone {
+      int heap_size;
+      double dist_cp_to_false_positives;
+    } cone;
     struct {
       struct {
       } input;

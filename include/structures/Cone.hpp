@@ -4,10 +4,11 @@
 #include <Eigen/Geometry>
 #include <algorithm>
 
-#include "as_msgs/Cone.h"
+#include <as_msgs/Cone.h>
 #include "structures/ConeUpdate.hpp"
 #include "structures/Observation.hpp"
 #include "structures/Point.hpp"
+#include "structures/Params.hpp"
 
 class Cone {
  private:
@@ -39,7 +40,7 @@ class Cone {
   void updateMetadata();
 
  public:
-  static int heapSize;
+  static Params::Tracker::Cone params;
   /**
    * CONSTRUCTOR
    */

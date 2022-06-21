@@ -61,7 +61,8 @@ Params::Params(const ros::NodeHandle &nh) {
   nh.param<bool>("/AS/P/ccat/tracker/fancy_markers", tracker.fancy_markers, false);
   nh.param<bool>("/AS/P/ccat/tracker/show_markers_id", tracker.show_markers_id, false);
   nh.param<bool>("/AS/P/ccat/tracker/markers_on_ground", tracker.markers_on_ground, true);
-  nh.param<int>("/AS/P/ccat/tracker/heap_size", tracker.heap_size, 10);
+  nh.param<int>("/AS/P/ccat/tracker/cone/heap_size", tracker.cone.heap_size, 10);
+  nh.param<double>("/AS/P/ccat/tracker/cone/dist_cp_to_false_positives", tracker.cone.dist_cp_to_false_positives, 15.0);
   nh.param<std::string>("/AS/P/ccat/tracker/topics/output/markers_baseLink", tracker.topics.output.mergedMarkers, "/AS/P/ccat/markers/instant/merged");
   nh.param<std::string>("/AS/P/ccat/tracker/topics/output/markers_baseLink", tracker.topics.output.finalMarkersBaseLink, "/AS/P/ccat/markers/final/base_link");
   nh.param<std::string>("/AS/P/ccat/tracker/topics/output/markers_global", tracker.topics.output.finalMarkersGlobal, "/AS/P/ccat/markers/final/global");

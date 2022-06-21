@@ -3,7 +3,7 @@
  * @author Oriol Gorriz (oriol.gorriz@estudiantat.upc.edu)
  * @brief It contains the specification of the Matcher module
  * @version 1.0
- * @date 2022-04-05
+ * @date 2022-06-21
  * 
  * @copyright Copyright (c) 2022 BCN eMotorsport
  * 
@@ -48,21 +48,48 @@ using Intrinsics = Eigen::Matrix3f;
 using Extrinsics = Eigen::Affine3d;
 
 /**
- * @brief Module that contains all the matching pipeline.
- * 
+ * @brief Module that contains all the matching pipeline. From detections from
+ * the global 3D map and the camera bounding boxes (+ car's state), register
+ * these variables and output the matches, i.e. cone \a id with its
+ * corresponding type.
  */
 class Matcher {
  public:
   /* ---------------------------- Public Structs ---------------------------- */
 
+  /**
+   * @brief Structure that allows to uniquely relate a Matcher module to its
+   * correspondant camera.
+   */
   enum Which { LEFT,
                RIGHT };
 
  private:
+
+  /**
+   * @brief Represents the data that a Projection needs
+   */
   struct ProjectionData {
+    /**
+     * @brief The index of the correspondant Observation in the input
+     * Observation vector.
+     */
     size_t obsInd;
+
+    /**
+     * @brief A shared pointer to the correspondant Observation.
+     * 
+     */
     Observation::Ptr obs;
+
+    /**
+     * @brief The cone centroid in camera coordinates.
+     */
     Point centroid_cam;
+
+    /**
+     * @brief A shared pointer to the cone point cloud in camera coords.
+     */
     PCL::Ptr pcl_cam = pcl::make_shared<PCL>();
   };
 
@@ -73,6 +100,11 @@ class Matcher {
    * - The 2D centroid of the Observation pointcloud in image space.
    */
   struct Projection {
+
+    /**
+     * @brief A pointer to the correspondant ProjectionData, i.e. information
+     * about the Observation it belongs.
+     */
     const ProjectionData *data;
 
     /**
@@ -90,7 +122,8 @@ class Matcher {
   /* -------------------------- Private Attributes -------------------------- */
 
   /**
-   * @brief The parameters object of the Matcher.
+   * @brief The parameters object of the Matcher, it includes all necessary
+   * paramters that will be used in the module.
    */
   const Params::Matcher params_;
 
@@ -104,6 +137,10 @@ class Matcher {
    */
   bool calibrated_;
 
+  /**
+   * @brief Output of the Matcher module, in every iteration, it gets updated
+   * with all cones that appear in-camera.
+   */
   std::vector<ConeUpdate> currentUpdates_;
 
   /**
@@ -126,8 +163,6 @@ class Matcher {
    * will return the calibrated extrinsics.
    */
   ros::ServiceClient calibSrv_;
-
-  /* ------------------------- Matcher Visualization ------------------------ */
 
   /**
    * @brief The Visualization object for the Matcher, it will allow us to
@@ -152,11 +187,21 @@ class Matcher {
    * @brief Calculates the height that would have a YOLO-BB of an Observation
    * given its distance to the camera plane \a z.
    * 
-   * @param z The distance of an Observation from the camera plane in meters
+   * @param[in] z The distance of an Observation from the camera plane in meters
    * @return double The height that would have a YOLO-BB of an Observation.
    */
   inline double bbHeightFromZ(const double &z) const;
 
+  /**
+   * @brief Specifies if a matching is possible given the distance of matching
+   * (px) and the bounding box height. This is equivalent to a distance variable
+   * threshold.
+   * 
+   * @param[in] matchingDist 
+   * @param[in] bbHeight 
+   * @return true 
+   * @return false 
+   */
   inline bool isMatchingPossible(const double &matchingDist, const double &bbHeight) const;
 
   /**
@@ -201,15 +246,31 @@ class Matcher {
    */
   void computeMatchings(const std::vector<Projection> &projections, const geometry_msgs::PoseArray &bbs, std::vector<Matching> &matchings);
 
+  /**
+   * @brief Updates the currentUpdates_ attribute.
+   * 
+   * @param[in] projs
+   * @param[in] projDatas 
+   * @param[in] bbs All the BB(s)
+   * @param[in] matchings Current iteration's mathings (relation BB-Projection)
+   */
   void updateData(const std::vector<Projection> &projs, const std::vector<ProjectionData> &projDatas, const geometry_msgs::PoseArray &bbs, const std::vector<Matching> &matchings);
 
+  /**
+   * @brief Calls the autocalibration service with current matches.
+   * Updates the extrinsics_ parameters if the calibration has been successful.
+   * 
+   * @param[in] projections 
+   * @param[in] bbs All the BB(s)
+   * @param[in] matchings Current iteration's mathings (relation BB-Projection)
+   */
   void autocalib(const std::vector<Projection> &projections, const geometry_msgs::PoseArray &bbs, const std::vector<Matching> &matchings);
 
   /**
    * @brief Constructs and returns a Point containing the BB centroid
    * (image space) and the height of the BB in pixels in z.
    * 
-   * @param bb 
+   * @param[in] bb 
    * @return A Point that will contain (image space):
    * - x: the BB centroid x coordinate
    * - y: the BB centroid y coordinate
@@ -223,9 +284,9 @@ class Matcher {
   /**
    * @brief Construct a new Matcher object
    * 
-   * @param params 
-   * @param nh 
-   * @param which 
+   * @param[in] params 
+   * @param[in] nh 
+   * @param[in] which 
    */
   Matcher(const Params::Matcher &params, ros::NodeHandle *const &nh, const Which &which);
 
@@ -233,7 +294,6 @@ class Matcher {
 
   /**
    * @brief Specifies which camera is the Matcher linked to
-   * 
    */
   const Which which;
 
@@ -244,8 +304,8 @@ class Matcher {
    * It replaces the actual Extrinsics with the new ones.
    * Useful for calibration.
    * 
-   * @param config 
-   * @param level 
+   * @param[in] config 
+   * @param[in] level 
    */
   void cfgCallback(const ccat::ExtrinsicsConfig &config, uint32_t level);
 
@@ -253,7 +313,8 @@ class Matcher {
    * @brief Main function of the Matcher class, it runs all the pipeline and
    * updates the currentCone_ attribute as a result.
    * 
-   * @param data The data necessary (aka Observation(s) and BB(s))
+   * @param[in] observations 
+   * @param[in] bbs 
    */
   void run(const std::vector<Observation::Ptr> &observations, const geometry_msgs::PoseArray::ConstPtr &bbs);
 

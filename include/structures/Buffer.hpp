@@ -1,3 +1,14 @@
+/**
+ * @file Buffer.hpp
+ * @author Oriol Gorriz (oriol.gorriz@estudiantat.upc.edu)
+ * @brief It contains the specification of the Buffer class.
+ * @version 1.0
+ * @date 2022-06-21
+ * 
+ * @copyright Copyright (c) 2022 BCN eMotorsport
+ * 
+ */
+
 #ifndef STRUCTURES_BUFFER_HPP
 #define STRUCTURES_BUFFER_HPP
 
@@ -10,11 +21,25 @@ namespace BuffF {
 inline ros::Duration abs(const ros::Duration &d) { return ros::Duration().fromNSec(std::abs(d.toNSec())); }
 }  // namespace BuffF
 
+/**
+ * @brief A class that represents a buffer, implemented with a deque and able to
+ * restrict its size with a delta of time.
+ * 
+ * @tparam BufferedType
+ */
 template <typename BufferedType>
 class Buffer : private std::deque<std::pair<BufferedType, ros::Time>> {
  private:
   using Elem = std::pair<BufferedType, ros::Time>;
   using Parent = std::deque<Elem>;
+
+  /* -------------------------- Private Attributes -------------------------- */
+
+  /**
+   * @brief Represents the maximum delta of time that the Buffer can have.
+   * If the difference in time of the latest and the oldest is bigger, the older
+   * objects will be removed.
+   */
   const ros::Duration tempMem_;
 
  public:

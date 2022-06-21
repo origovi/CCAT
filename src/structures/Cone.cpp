@@ -1,13 +1,13 @@
 #include "structures/Cone.hpp"
 
-int Cone::heapSize;
+Params::Tracker::Cone Cone::params;
 /**
  * CONSTRUCTORS
  */
 
 Cone::Cone(const Observation &obs, const size_t &id) : id(id) {
-  heapM_.reserve(heapSize);
-  heap_.reserve(heapSize);
+  heapM_.reserve(params.heap_size);
+  heap_.reserve(params.heap_size);
   this->obs = std::make_shared<Observation>(obs);
   this->obs->id = id;
   metadata_.type = ConeUpdate::NONE;
@@ -92,7 +92,7 @@ void Cone::updateMetadata() {
   if (heap_isMatched) {
     if (heapM_meanHeur > 0.007) metadata_.type = heapM_biggestType;
   }
-  else if (heap_meanHeur > 1/15.0f) {
+  else if (heap_meanHeur > 1/params.dist_cp_to_false_positives) {
     metadata_.valid = false;
   }
 }
@@ -104,7 +104,7 @@ void Cone::updateMetadata() {
 void Cone::update(const ConeUpdate &coneUpdate) {
   /* ----------------------------- Update heap_ ----------------------------- */
   double heuristic = getHeuristic(coneUpdate, 0.0);
-  if (heap_.size() >= heapSize) {
+  if (heap_.size() >= params.heap_size) {
     // Find the element with min heuristic in the vector
     // and replace it if the heuristic is bigger.
     auto min_it = std::min_element(heap_.begin(), heap_.end(), Consideration::comparer);
@@ -120,7 +120,7 @@ void Cone::update(const ConeUpdate &coneUpdate) {
   /* ----------------------------- Update HeapM_ ---------------------------- */
   if (coneUpdate.type != ConeUpdate::NONE) {
     double coneHeuristic = getHeuristicM(coneUpdate, 0.0);
-    if (heapM_.size() >= heapSize) {
+    if (heapM_.size() >= params.heap_size) {
       // Find the element with min heuristic in the vector
       // and replace it if the heuristic is bigger.
       auto min_it = std::min_element(heapM_.begin(), heapM_.end(), ConsiderationM::comparer);

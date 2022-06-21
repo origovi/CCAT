@@ -43,7 +43,10 @@ tracker:
   debug:                        true
   same_cone_max_distSq:         0.8                                 # double (m²), if a new observation is less than sqrt(this)
                                                                     # away from a cone, it will be assumed they are the same cone
-  heap_size:                    7                                  # int, specifies how big is the statistical polling vector; the smaller this is the quicker the cones will change its type
+  cone:
+    heap_size:                  7                                   # int (num), specifies how big is the statistical polling vector; the smaller this is the quicker the cones will change its type
+    dist_cp_to_false_positives: 15.0                                # double (m), specifies the distance to the camera plane from which there is enough
+                                                                    # confince to invalidate cones (false positives), i.e. a cone closer than dist_cp_to_false_positives can be invalidated.
   fancy_markers:                true                                # bool, draws markers as real cones (instead of cylinders),
                                                                     # a source of devel/setup.bash must be done before opening rviz
   show_markers_id:              true

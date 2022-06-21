@@ -1,3 +1,14 @@
+/**
+ * @file Tracker.hpp
+ * @author Oriol Gorriz (oriol.gorriz@estudiantat.upc.edu)
+ * @brief It contains the specification of the Tracker module.
+ * @version 1.0
+ * @date 2022-06-21
+ * 
+ * @copyright Copyright (c) 2022 BCN eMotorsport
+ * 
+ */
+
 #ifndef MODULES_TRACKER_TRACKER_HPP
 #define MODULES_TRACKER_TRACKER_HPP
 
@@ -14,58 +25,115 @@
 #include "structures/Params.hpp"
 #include "utils/KDTree.hpp"
 
+/**
+ * @brief The Tracker module is the only module in which cones are stored
+ * between iterations. The objective of this module is to keep track of all
+ * observations and decide which one should be output and the type of it.
+ */
 class Tracker {
  private:
-  /**
-   * PRIVATE CONSTRUCTOR ANC DESTRUCTOR
-   */
+  /* -------------------------- Private Constructor ------------------------- */
 
   Tracker();
 
-  /**
-   * PRIVATE ATTRIBUTES
-   */
+  /* -------------------------- Private Attributes -------------------------- */
 
+  /**
+   * @brief The parameters object of the Tracker, it includes all necessary
+   * paramters that will be used in the module.
+   */
   Params::Tracker params_;
 
-  size_t lastId_;
-  std::map<size_t, Cone> cones_;
-
-  as_msgs::ConeArray currentCones_;
-
-  TrackerVis vis_;
+  /**
+   * @brief Next id to give to a Cone.
+   */
+  size_t nextId_;
 
   /**
-   * PRIVATE METHODS
+   * @brief Main memory object, here the Cone(s) are stored and tracked with
+   * the given id.
    */
-  void updateCurrentCones();
+  std::map<size_t, Cone> cones_;
 
+  /**
+   * @brief Current valid cones in the output format (as_msgs), later on,
+   * another ROS node could read this data.
+   */
+  as_msgs::ConeArray currentCones_;
+
+  /**
+   * @brief The Visualization object for the Tracker, it will allow us to
+   * publish all debug messages.
+   */
+  TrackerVis vis_;
+
+  /* ---------------------------- Private Methods --------------------------- */
+
+  /**
+   * @brief Transform a vector of Cone(s) into a vector of Point(s), useful when
+   * creating a k-d tree (we need the raw points).
+   * 
+   * @param[in,out] points 
+   * @param[in] trackingPtrs 
+   */
   void getTrackingPoints(std::vector<Point> &points, std::vector<Cone *> &trackingPtrs);
 
  public:
-  /**
-   * PUBLIC METHODS
-   */
-
-  /* Singleton pattern */
+  /* --------------------------- Singleton Pattern -------------------------- */
 
   static Tracker &getInstance();
   Tracker(Tracker const &) = delete;
   void operator=(Tracker const &) = delete;
 
-  /* Init */
-
+  /**
+   * @brief It initializes the module.
+   * 
+   * @param[in] params The params that will be used by the Tracker
+   */
   void init(const Params::Tracker &params);
 
+  /* ---------------------------- Public Methods ---------------------------- */
+
+  /**
+   * @brief In charge of making the function of the Accumulator fictional
+   * module, add new observations with the historic. To do so, for every new
+   * Observation, it finds the closest position and assumes it corresponds the
+   * same cone, if this distance is too high, a new cone is assumed to be seen.
+   * 
+   * @param[in] data are the new Observation(s) and the new car state
+   */
   void accumulate(const std::pair<const std::vector<Observation> &, const Eigen::Affine3d &> &data);
 
+  /**
+   * @brief Main function of the Tracker class, it runs all the pipeline and
+   * updates the currentCones_ attribute as a result.
+   * To do so, a statistical heuristically-ponderated model is employed.
+   * 
+   * @param[in] coneUpdates are the ConeUpdate(s) obtained from the Merger
+   * module
+   */
   void run(const std::vector<ConeUpdate> &coneUpdates);
 
-  /* Callbacks */
-
-  /* Getters */
+  /**
+   * @brief Getter for all the Observation(s) contained by the module.
+   * 
+   * @return a vector of shared pointers to Observation(s)
+   */
   std::vector<Observation::Ptr> getObservations() const;
+
+  /**
+   * @brief Returns the data (cones correctly classified) in as_msgs format-
+   * 
+   * @return a vector of cones
+   */
   const as_msgs::ConeArray &getData();
+
+  /**
+   * @brief Checks if the module has valid data.
+   * 
+   * @return true 
+   * @return false 
+   */
   bool hasData() const;
 };
 

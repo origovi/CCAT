@@ -1,3 +1,15 @@
+/**
+ * @file Matching.hpp
+ * @author Oriol Gorriz (oriol.gorriz@estudiantat.upc.edu)
+ * @brief It is an auxiliary class to the Matcher module that facilitates
+ * how to relate a bounding box with a projected cone (matching).
+ * @version 1.0
+ * @date 2022-06-21
+ * 
+ * @copyright Copyright (c) 2022 BCN eMotorsport
+ * 
+ */
+
 #ifndef MODULES_MATCHER_MATCHING_HPP
 #define MODULES_MATCHER_MATCHING_HPP
 
@@ -39,8 +51,8 @@ class Matching {
    * @brief Match the implicit object to the BB with index \a bbInd and with
    * a matching distance \a dist.
    * 
-   * @param bbInd Index of the BB
-   * @param dist Matching distance
+   * @param[in] bbInd Index of the BB
+   * @param[in] dist Matching distance
    */
   void match(size_t bbInd, double dist) {
     valid_ = true;

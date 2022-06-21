@@ -5,7 +5,7 @@
  */
 
 Tracker::Tracker() {
-  lastId_ = 0;
+  nextId_ = 0;
 }
 
 /**
@@ -39,14 +39,14 @@ Tracker &Tracker::getInstance() {
 void Tracker::init(const Params::Tracker &params) {
   params_ = params;
   vis_.init(params);
-  Cone::heapSize = params_.heap_size;
+  Cone::params = params_.cone;
 }
 
 void Tracker::accumulate(const std::pair<const std::vector<Observation> &, const Eigen::Affine3d &> &data) {
   if (cones_.empty()) {
     for (const Observation &obs : data.first) {
-      cones_.emplace_hint(cones_.end(), std::piecewise_construct, std::forward_as_tuple(lastId_), std::forward_as_tuple(obs, lastId_));
-      lastId_++;
+      cones_.emplace_hint(cones_.end(), std::piecewise_construct, std::forward_as_tuple(nextId_), std::forward_as_tuple(obs, nextId_));
+      nextId_++;
     }
   } else {
     std::vector<Point> points(cones_.size());
@@ -63,8 +63,8 @@ void Tracker::accumulate(const std::pair<const std::vector<Observation> &, const
       }
       // We have observed a new cone
       else {
-        cones_.emplace_hint(cones_.end(), std::piecewise_construct, std::forward_as_tuple(lastId_), std::forward_as_tuple(obs, lastId_));
-        lastId_++;
+        cones_.emplace_hint(cones_.end(), std::piecewise_construct, std::forward_as_tuple(nextId_), std::forward_as_tuple(obs, nextId_));
+        nextId_++;
       }
     }
   }
