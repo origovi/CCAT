@@ -1,3 +1,14 @@
+/**
+ * @file Visualization.hpp
+ * @author Oriol Gorriz (oriol.gorriz@estudiantat.upc.edu)
+ * @brief It contains the specification of the Visualization class.
+ * @version 1.0
+ * @date 2022-06-21
+ * 
+ * @copyright Copyright (c) 2022 BCN eMotorsport
+ * 
+ */
+
 #ifndef UTILS_VISUALIZATION_HPP
 #define UTILS_VISUALIZATION_HPP
 
@@ -11,6 +22,16 @@
 #include <stdexcept>
 #include <string>
 
+/**
+ * @brief Abstract-static class made to make it easier to publish information
+ * to topics. It creates dynamically ROS::Publisher(s) for the following
+ * datatypes:
+ * - sensor_msgs::PointCloud2
+ * - visualization_msgs::MarkerArray
+ * - visualization_msgs::Marker
+ * - visualization_msgs::MarkerArray
+ * - image_transport::ImageTransport
+ */
 class Visualization {
  private:
   template <typename T>

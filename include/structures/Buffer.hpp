@@ -43,12 +43,32 @@ class Buffer : private std::deque<std::pair<BufferedType, ros::Time>> {
   const ros::Duration tempMem_;
 
  public:
+  /* -------------------------- Public Constructor -------------------------- */
+
   Buffer(const float &tempMem) : tempMem_(tempMem) {}
 
+  /* ---------------------------- Public Methods ---------------------------- */
+
+  /**
+   * @brief Whether or not the container does not have data.
+   * 
+   * @return true 
+   * @return false 
+   */
   bool empty() const { return Parent::empty(); }
 
+  /**
+   * @brief Returns the number of objects in the container.
+   * 
+   * @return size_t 
+   */
   size_t size() const { return Parent::size(); }
 
+  /**
+   * @brief Returns the stamp of the oldest element.
+   * 
+   * @return const ros::Time& 
+   */
   const ros::Time &oldestStamp() const {
     if (empty()) {
       throw std::runtime_error("Buffer is empty, cannot get stamp");
@@ -56,6 +76,11 @@ class Buffer : private std::deque<std::pair<BufferedType, ros::Time>> {
     return Parent::front().second;
   }
 
+  /**
+   * @brief Returns the oldest element.
+   * 
+   * @return const Elem& 
+   */
   const Elem &oldestElem() const {
     if (empty()) {
       throw std::runtime_error("Buffer is empty, cannot get element");
@@ -63,6 +88,11 @@ class Buffer : private std::deque<std::pair<BufferedType, ros::Time>> {
     return Parent::front();
   }
 
+  /**
+   * @brief Returns the timestamp of the newest element.
+   * 
+   * @return const ros::Time& 
+   */
   const ros::Time &newestStamp() const {
     if (empty()) {
       throw std::runtime_error("Buffer is empty, cannot get stamp");
@@ -70,6 +100,11 @@ class Buffer : private std::deque<std::pair<BufferedType, ros::Time>> {
     return Parent::back().second;
   }
 
+  /**
+   * @brief Returns the newest element.
+   * 
+   * @return const Elem& 
+   */
   const Elem &newestElem() const {
     if (empty()) {
       throw std::runtime_error("Buffer is empty, cannot get element");
@@ -77,16 +112,40 @@ class Buffer : private std::deque<std::pair<BufferedType, ros::Time>> {
     return Parent::back();
   }
 
+  /**
+   * @brief Makes an average of the delay between the data stored in the
+   * container.
+   * 
+   * @return ros::Duration 
+   */
   ros::Duration avgDelay() const {
     if (size() < 2) return ros::Duration();
     return ros::Duration().fromNSec((newestStamp() - oldestStamp()).toNSec() / (size() - 1));
   }
 
+  /**
+   * @brief Makes an average of the frequency between the data stored in the
+   * container.
+   * 
+   * @return double 
+   */
   double avgFreq() const {
     if (size() < 2) return 0.0;
     return 1.0 / avgDelay().toSec();
   }
 
+  /**
+   * @brief Computes whether or not a specific Buffer is in synch with \a this
+   * Buffer, if so, \a thisSyncElem and \a syncElem will be the synched
+   * elements.
+   * 
+   * @tparam BufferedType2 
+   * @param buffer 
+   * @param thisSyncElem 
+   * @param syncElem 
+   * @return true 
+   * @return false 
+   */
   template <typename BufferedType2>
   bool isSynchWith(const Buffer<BufferedType2> &buffer, BufferedType &thisSyncElem, BufferedType2 &syncElem) const {
     ros::Duration diff;
@@ -123,6 +182,12 @@ class Buffer : private std::deque<std::pair<BufferedType, ros::Time>> {
     }
   }
 
+  /**
+   * @brief Emplaces a new element into the Buffer with timestamp \a stamp.
+   * 
+   * @param element 
+   * @param stamp 
+   */
   void add(const BufferedType &element, const ros::Time &stamp = ros::Time::now()) {
     Parent::emplace_back(element, stamp);
 
@@ -132,6 +197,12 @@ class Buffer : private std::deque<std::pair<BufferedType, ros::Time>> {
     }
   }
 
+  /**
+   * @brief Returns the element that has a timestamp just before \a stamp. 
+   * 
+   * @param stamp 
+   * @return const Elem& 
+   */
   const Elem &elemJustBefore(const ros::Time &stamp) const {
     if (empty()) {
       throw std::runtime_error("Buffer is empty, cannot get any element");
@@ -147,6 +218,12 @@ class Buffer : private std::deque<std::pair<BufferedType, ros::Time>> {
     }
   }
 
+  /**
+   * @brief Returns the element that has a timestamp just after \a stamp. 
+   * 
+   * @param stamp 
+   * @return const Elem& 
+   */
   const Elem &elemJustAfter(const ros::Time &stamp) const {
     if (empty()) {
       throw std::runtime_error("Buffer is empty, cannot get any element");
@@ -162,6 +239,12 @@ class Buffer : private std::deque<std::pair<BufferedType, ros::Time>> {
     }
   }
 
+  /**
+   * @brief Returns the element that has a timestamp closest to \a stamp. 
+   * 
+   * @param stamp 
+   * @return const Elem& 
+   */
   const Elem &elemClosestTo(const ros::Time &stamp) const {
     if (empty()) {
       throw std::runtime_error("Buffer is empty, cannot get any element");

@@ -1,3 +1,14 @@
+/**
+ * @file Params.hpp
+ * @author Oriol Gorriz (oriol.gorriz@estudiantat.upc.edu)
+ * @brief It contains the specification of the Params class.
+ * @version 1.0
+ * @date 2022-06-21
+ * 
+ * @copyright Copyright (c) 2022 BCN eMotorsport
+ * 
+ */
+
 #ifndef STRUCTURES_PARAMS_HPP
 #define STRUCTURES_PARAMS_HPP
 

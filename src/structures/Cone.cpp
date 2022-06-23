@@ -11,7 +11,6 @@ Cone::Cone(const Observation &obs, const size_t &id) : id(id) {
   this->obs = std::make_shared<Observation>(obs);
   this->obs->id = id;
   metadata_.type = ConeUpdate::NONE;
-  metadata_.valid = true;
 }
 
 /**

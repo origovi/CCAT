@@ -1,3 +1,14 @@
+/**
+ * @file Manager.hpp
+ * @author Oriol Gorriz (oriol.gorriz@estudiantat.upc.edu)
+ * @brief It contains the specification of the Manager module.
+ * @version 1.0
+ * @date 2022-06-21
+ * 
+ * @copyright Copyright (c) 2022 BCN eMotorsport
+ * 
+ */
+
 #ifndef MANAGER_HPP
 #define MANAGER_HPP
 
@@ -18,9 +29,17 @@
 #include "structures/Params.hpp"
 #include "utils/Time.hpp"
 
+/**
+ * @brief The Manager module is what coordinates all different Modules.
+ * It is responsible for:
+ * - Data synchronization
+ * - Dynamic reconfigure objects
+ * - Pipeline calls
+ */
 class Manager {
  private:
-  /* ---------------------- Constructor And Destructor ---------------------- */
+  /* ------------------ Private Constructor And Destructor ------------------ */
+
   Manager();
   ~Manager();
 
@@ -57,14 +76,35 @@ class Manager {
                 R_BBS };
 
   /* ---------------------------- Private Methods --------------------------- */
+  /**
+   * @brief Runs the pipeline with last synchronized data.
+   */
   void run() const;
+
+  /**
+   * @brief Checks whether or not the latest data is synchronized, if so, runs
+   * the pipeline with it.
+   * 
+   * @param update 
+   */
   void runIfPossible(const Update &update);
+
+  /**
+   * @brief Enters a calibration loop with the same data, allows to call
+   * dynamic reconfigure callbacks.
+   */
   void calibLoop() const;
+
+  /**
+   * @brief Updates the working mode. LiDAR only, camera only, ...
+   */
   void updateMode();
   template <typename BufferedType>
   bool buffHasValidData(const Buffer<BufferedType> &buff) const;
 
  public:
+  /* --------------------------- Singleton Pattern -------------------------- */
+
   static Manager &getInstance();
   Manager(Manager const &) = delete;
   void operator=(Manager const &) = delete;

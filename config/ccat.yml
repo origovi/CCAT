@@ -15,7 +15,7 @@ manager:
   publish_only_odom_update:     false                               # bool, whether of not to publish markers ONLY when Odom is updated
 
 preproc:
-  cluster_dist:                 1.5                                 # double (m)
+  cluster_dist:                 1                                   # double (m)
 
 matcher:
   common:
@@ -49,7 +49,7 @@ tracker:
                                                                     # confince to invalidate cones (false positives), i.e. a cone closer than dist_cp_to_false_positives can be invalidated.
   fancy_markers:                true                                # bool, draws markers as real cones (instead of cylinders),
                                                                     # a source of devel/setup.bash must be done before opening rviz
-  show_markers_id:              true
+  show_markers_id:              false
   markers_on_ground:            true                                # bool, chooses whether or not to paint markers with z=0 or with real z
   topics:
     output:
