@@ -59,7 +59,7 @@ void Matcher::projections(const std::vector<ProjectionData> &projDatas, std::vec
       projs.push_back(proj);
     }
   }
-  std::cout << '[' << which << "]: Projs Size: " << projs.size() << std::endl;
+  // std::cout << '[' << which << "]: Projs Size: " << projs.size() << std::endl;
 }
 
 double Matcher::bbHeightFromZ(const double &z) const {
@@ -128,7 +128,7 @@ void Matcher::matchGreedy(const size_t &projInd, const std::vector<Projection> &
   Point projCentroidAndBBHeight(projections[projInd].imageCentroid.x, projections[projInd].imageCentroid.y, bbHeightFromZ(projections[projInd].data->centroid_cam.x));
   pointIndexV bbPointInd(bbsKDT.nearest_pointIndex(projCentroidAndBBHeight));
   double dist = Point::dist(projCentroidAndBBHeight, bbPointInd->first);
-  std::cout << "bb height: " << projCentroidAndBBHeight.z << " " << bbPointInd->first.z << std::endl;
+  // std::cout << "bb height: " << projCentroidAndBBHeight.z << " " << bbPointInd->first.z << std::endl;
   // No matching is possible
   if (!bool(bbPointInd) or !isMatchingPossible(dist, projCentroidAndBBHeight.z)) {
     return;
@@ -197,7 +197,6 @@ void Matcher::updateData(const std::vector<Projection> &projs, const std::vector
   // the closest matched observation for every non-matched one.
   for (size_t i = 0; i < matchings.size(); i++) {
     if (bool(matchings[i])) {
-      std::cout << '[' << which << "] " << projs[i].data->obs->id << ' ' << bbs.poses[matchings[i].bbInd()].position.x << std::endl;
       matchings_num++;
       currentUpdates_.emplace_back(projs[i].data->obs->id, bbs.poses[matchings[i].bbInd()].position.x, bbs.poses[matchings[i].bbInd()].position.z, matchings[i].dist(), projs[i].data->centroid_cam.x);
       matchedCentroids.push_back(projs[i].data->obs->centroid_global);
@@ -217,7 +216,7 @@ void Matcher::updateData(const std::vector<Projection> &projs, const std::vector
       }
     }
   }
-  std::cout << '[' << which << "]: Matchings Size: " << matchings_num << std::endl;
+  // std::cout << '[' << which << "]: Matchings Size: " << matchings_num << std::endl;
 }
 
 void Matcher::autocalib(const std::vector<Projection> &projections, const geometry_msgs::PoseArray &bbs, const std::vector<Matching> &matchings) {
@@ -282,7 +281,6 @@ void Matcher::run(const std::vector<Observation::Ptr> &observations, const geome
     ROS_WARN("Intent to match with invalid BBs");
     return;
   }
-  if (bbs->poses.size() == 0) return;
 
   if (calibrated_) hasValidData_ = true;
 

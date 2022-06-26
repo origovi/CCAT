@@ -15,9 +15,10 @@ Manager::~Manager() {
 
 void Manager::run() const {
   Time::tick("main");
-  #pragma omp parallel
+  #pragma omp parallel num_threads(2)
   #pragma omp single
   {
+    std::cout << omp_get_num_threads() << " threads" << std::endl;
     preproc->run(lastRunObs_, lastRunOdom_, lastRunLeftBBs_, lastRunRightBBs_);
     tracker->accumulate(preproc->getData());
     calibQueue_->callAvailable();
@@ -76,6 +77,7 @@ void Manager::runIfPossible(const Update &update) {
       bool rightSync = buffOdom_->isSynchWith(*buffRightBBs_, odomRight, rightBBsTemp);
       bool leftSync = buffOdom_->isSynchWith(*buffLeftBBs_, odomLeft, leftBBsTemp);
       if (!leftSync and !rightSync) return;
+      ROS_WARN("BOTH_CAMS");
       if (leftSync and rightSync) {
         if (odomRight == odomLeft) {
           odom = odomRight;

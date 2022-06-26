@@ -44,12 +44,14 @@ class Manager {
   ~Manager();
 
   /* -------------------------------- Modules ------------------------------- */
+
   Preproc *preproc;
   Matcher *matcherL, *matcherR;
   Merger *merger;
   Tracker *tracker;
 
   /* -------------------------- Private Attributes -------------------------- */
+
   Buffer<geometry_msgs::PoseArray::ConstPtr> *buffLeftBBs_, *buffRightBBs_;
   Buffer<nav_msgs::Odometry::ConstPtr> *buffOdom_;
   as_msgs::ObservationArray::ConstPtr latestObs_;  // Buffer don't needed
@@ -109,13 +111,24 @@ class Manager {
   Manager(Manager const &) = delete;
   void operator=(Manager const &) = delete;
 
+  /**
+   * @brief It initalizes the module.
+   * 
+   * @param nh
+   * @param params 
+   * @param conesPub 
+   * @param cfgSrv_extr_left 
+   * @param cfgSrv_extr_right 
+   * @param calibQueue 
+   */
   void init(ros::NodeHandle *const nh, const Params &params,
             const ros::Publisher &conesPub,
             dynamic_reconfigure::Server<ccat::ExtrinsicsConfig> &cfgSrv_extr_left,
             dynamic_reconfigure::Server<ccat::ExtrinsicsConfig> &cfgSrv_extr_right,
             ros::CallbackQueue *const calibQueue);
 
-  /* Callbacks */
+  /* ---------------------------- Public Methods ---------------------------- */
+
   void leftBBsCallback(const geometry_msgs::PoseArray::ConstPtr &bbs);
   void rightBBsCallback(const geometry_msgs::PoseArray::ConstPtr &bbs);
   void odomCallback(const nav_msgs::Odometry::ConstPtr &odom);

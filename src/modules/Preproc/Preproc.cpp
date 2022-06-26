@@ -112,7 +112,7 @@ void Preproc::run(const as_msgs::ObservationArray::ConstPtr &newObservations,
     preprocess(*newObservations);
     currentObservationsStamp_ = newObservations->header.stamp;
   }
-  std::cout << "orig size: " << newObservations->observations.size() << " process size: " << currentObservations_.size() << std::endl;
+  // std::cout << "orig size: " << newObservations->observations.size() << " process size: " << currentObservations_.size() << std::endl;
   hasData_ = true;
 }
 
