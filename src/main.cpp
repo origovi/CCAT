@@ -1,3 +1,14 @@
+/**
+ * @file main.cpp
+ * @author Oriol Gorriz (oriol.gorriz@estudiantat.upc.edu)
+ * @brief Main file of CCAT
+ * @version 1.0
+ * @date 2022-06-21
+ * 
+ * @copyright Copyright (c) 2022 BCN eMotorsport
+ * 
+ */
+
 #include <as_msgs/ConeArray.h>
 #include <ccat/ExtrinsicsConfig.h>
 #include <dynamic_reconfigure/server.h>

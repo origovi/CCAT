@@ -19,18 +19,15 @@
 
 struct Params {
 
-  /**
-   * CONSTRUCTOR
-   */
+  /* -------------------------- Public Constructor -------------------------- */
 
   Params(const ros::NodeHandle &nh);
   
-  /**
-   * COMMON
-   */
+  /* ------------------------------------------------------------------------ */
+  /*                                  COMMON                                  */
+  /* ------------------------------------------------------------------------ */
   
   struct Common {
-    int frequency;
     struct {
       struct {
         std::string observations;
@@ -43,39 +40,41 @@ struct Params {
     } topics;
   } common;
 
-  /**
-   * MANAGER
-   */
+  /* ------------------------------------------------------------------------ */
+  /*                                  MANAGER                                 */
+  /* ------------------------------------------------------------------------ */
 
   struct Manager {
     float bufferTempMem;
+    bool only_lidar;
     bool static_calib;
     bool publish_only_odom_update;
   } manager;
 
-  /**
-   * PREPROC
-   */
+  /* ------------------------------------------------------------------------ */
+  /*                                  PREPROC                                 */
+  /* ------------------------------------------------------------------------ */
 
   struct Preproc {
     float cluster_dist;
+    bool publish_markers;
     struct {
       struct {
       } input;
       struct {
+        std::string input_markers;
       } output;
     } topics;
   } preproc;
 
-  /**
-   * MATCHER
-   */
+  /* ------------------------------------------------------------------------ */
+  /*                                  MATCHER                                 */
+  /* ------------------------------------------------------------------------ */
 
   struct Matcher {
     bool debug;
     std::string match_type;
     double max_match_search_dist;
-    double max_match_real_dist;
     double min_dist_car_able_to_match;
     int image_width, image_height;
     float cone_height, cone_width;
@@ -93,17 +92,17 @@ struct Params {
     } topics;
   } matcherL, matcherR;
 
-  /**
-   * MERGER
-   */
+  /* ------------------------------------------------------------------------ */
+  /*                                  MERGER                                  */
+  /* ------------------------------------------------------------------------ */
 
   struct Merger {
 
   } merger;
 
-  /**
-   * TRACKER
-   */
+  /* ------------------------------------------------------------------------ */
+  /*                                  TRACKER                                 */
+  /* ------------------------------------------------------------------------ */
 
   struct Tracker {
     bool debug;

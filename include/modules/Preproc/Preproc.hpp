@@ -23,6 +23,7 @@
 #include <vector>
 
 #include "modules/Matcher/Matcher.hpp"
+#include "modules/Preproc/PreprocVis.hpp"
 #include "structures/Observation.hpp"
 #include "structures/Params.hpp"
 #include "structures/Point.hpp"
@@ -52,7 +53,7 @@ class Preproc {
    * Preproc::getData().
    */
   std::vector<Observation> currentObservations_;
-  
+
   /**
    * @brief Specifies whether or not currentObservations_ attribute has valid
    * data.
@@ -78,6 +79,12 @@ class Preproc {
    */
   Eigen::Affine3d carTf_;
 
+  /**
+   * @brief The Visualization object for the Preproc, it will allow us to
+   * publish all debug messages.
+   */
+  PreprocVis vis_;
+
   /* ---------------------------- Private Methods --------------------------- */
 
   /**
@@ -96,7 +103,7 @@ class Preproc {
    * \a pointIndex and that have not been visited yet
    */
   std::list<const Observation *> possiblesSamePoint(const size_t &pointIndex, const KDTree &observationsKDT, const std::vector<Observation> &allObs, std::vector<bool> &visited) const;
-  
+
   /**
    * @brief Preprocess all data and updates currentObservations_.
    * 

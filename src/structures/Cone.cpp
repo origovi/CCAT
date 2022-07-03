@@ -1,6 +1,7 @@
 #include "structures/Cone.hpp"
 
 Params::Tracker::Cone Cone::params;
+bool Cone::bothCams;
 /**
  * CONSTRUCTORS
  */
@@ -11,6 +12,7 @@ Cone::Cone(const Observation &obs, const size_t &id) : id(id) {
   this->obs = std::make_shared<Observation>(obs);
   this->obs->id = id;
   metadata_.type = ConeUpdate::NONE;
+  metadata_.valid = true;
 }
 
 /**
@@ -91,7 +93,7 @@ void Cone::updateMetadata() {
   if (heap_isMatched) {
     if (heapM_meanHeur > 0.007) metadata_.type = heapM_biggestType;
   }
-  else if (heap_meanHeur > 1/params.dist_cp_to_false_positives) {
+  else if (Cone::bothCams and heap_meanHeur > 1/params.dist_cp_to_false_positives) {
     metadata_.valid = false;
   }
 }

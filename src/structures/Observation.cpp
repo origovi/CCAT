@@ -10,6 +10,7 @@ Observation::Observation(const PCL &pcl_global, const float &confidence) : pcl_g
 
 Observation::Observation(const as_msgs::Observation &obs) : centroid_global(obs.centroid), confidence(obs.confidence) {
   pcl::fromROSMsg(obs.cloud, pcl_global);
+  centroid_global = computeCentroid(pcl_global);
   // invert y and z axis
   for (auto &p : pcl_global.points) {
     p.y *= -1;

@@ -18,7 +18,7 @@ void Manager::run() const {
   #pragma omp parallel num_threads(2)
   #pragma omp single
   {
-    std::cout << omp_get_num_threads() << " threads" << std::endl;
+    // std::cout << omp_get_num_threads() << " threads" << std::endl;
     preproc->run(lastRunObs_, lastRunOdom_, lastRunLeftBBs_, lastRunRightBBs_);
     tracker->accumulate(preproc->getData());
     calibQueue_->callAvailable();
@@ -41,29 +41,26 @@ void Manager::run() const {
 
 void Manager::runIfPossible(const Update &update) {
   if (mode_ == NONE) return;
-  
+
   nav_msgs::Odometry::ConstPtr odom;
   geometry_msgs::PoseArray::ConstPtr leftBBs, rightBBs;
-  
+
   if (update == OBS) {
     odom = lastRunOdom_;
     leftBBs = lastRunLeftBBs_;
     rightBBs = lastRunRightBBs_;
-  }
-  else {
+  } else {
     if (mode_ == L_ONLY) {
       if (update != ODOM) return;
       ROS_WARN("L_ONLY");
       odom = buffOdom_->newestElem().first;
-    }
-    else if (mode_ == L_CAM) {
+    } else if (mode_ == L_CAM) {
       if (update == R_BBS) return;
       if (!buffOdom_->isSynchWith(*buffLeftBBs_, odom, leftBBs)) return;
       if (lastRunOdom_ != nullptr and lastRunOdom_->header.stamp > odom->header.stamp) return;
       if (odom == lastRunOdom_ and leftBBs == lastRunLeftBBs_) return;
       ROS_WARN("L_CAM");
-    }
-    else if (mode_ == R_CAM) {
+    } else if (mode_ == R_CAM) {
       if (update == L_BBS) return;
       if (!buffOdom_->isSynchWith(*buffRightBBs_, odom, rightBBs)) return;
       if (lastRunOdom_ != nullptr and lastRunOdom_->header.stamp > odom->header.stamp) return;
@@ -83,8 +80,7 @@ void Manager::runIfPossible(const Update &update) {
           odom = odomRight;
           leftBBs = leftBBsTemp;
           rightBBs = rightBBsTemp;
-        }
-        else if (odomRight->header.stamp > odomLeft->header.stamp) {
+        } else if (odomRight->header.stamp > odomLeft->header.stamp) {
           if (lastRunOdom_ != nullptr and odomLeft->header.stamp > lastRunOdom_->header.stamp) {
             odom = odomLeft;
             leftBBs = leftBBsTemp;
@@ -92,8 +88,7 @@ void Manager::runIfPossible(const Update &update) {
             odom = odomRight;
             rightBBs = rightBBsTemp;
           }
-        }
-        else {
+        } else {
           if (lastRunOdom_ != nullptr and odomRight->header.stamp > lastRunOdom_->header.stamp) {
             odom = odomRight;
             rightBBs = rightBBsTemp;
@@ -113,7 +108,6 @@ void Manager::runIfPossible(const Update &update) {
     }
   }
 
-
   lastRunObs_ = latestObs_;
   lastRunOdom_ = odom;
   lastRunRightBBs_ = rightBBs;
@@ -128,17 +122,20 @@ void Manager::updateMode() {
   if (latestObs_ != nullptr) {
     if (buffHasValidData(*buffOdom_)) {
       mode_ = L_ONLY;
-      if (buffHasValidData(*buffLeftBBs_)) {
-        mode_ = L_CAM;
-        if (buffHasValidData(*buffRightBBs_)) {
-          mode_ = BOTH_CAMS;
+      if (!params_.only_lidar) {
+        if (buffHasValidData(*buffLeftBBs_)) {
+          mode_ = L_CAM;
+          if (buffHasValidData(*buffRightBBs_)) {
+            mode_ = BOTH_CAMS;
+          }
+        } else if (buffHasValidData(*buffLeftBBs_)) {
+          mode_ = R_CAM;
         }
-      }
-      else if (buffHasValidData(*buffLeftBBs_)) {
-        mode_ = R_CAM;
       }
     }
   }
+  // Update Cone's class parameter (to not invalidate cones when cameras are missing)
+  Cone::bothCams = mode_ == Mode::BOTH_CAMS;
 }
 
 void Manager::calibLoop() const {
@@ -206,11 +203,13 @@ void Manager::rightBBsCallback(const geometry_msgs::PoseArray::ConstPtr &bbs) {
   updateMode();
   runIfPossible(R_BBS);
 }
+
 void Manager::odomCallback(const nav_msgs::Odometry::ConstPtr &odom) {
   buffOdom_->add(odom, odom->header.stamp);
   updateMode();
   runIfPossible(ODOM);
 }
+
 void Manager::obsCallback(const as_msgs::ObservationArray::ConstPtr &observations) {
   latestObs_ = observations;
   updateMode();

@@ -156,6 +156,12 @@ class Matcher {
    */
   const Intrinsics intrinsics_;
 
+  /**
+   * @brief The Visualization object for the Matcher, it will allow us to
+   * publish all debug messages.
+   */
+  MatcherVis vis_;
+
   /* -------------------------- Private Subscribers ------------------------- */
 
   /**
@@ -163,12 +169,6 @@ class Matcher {
    * will return the calibrated extrinsics.
    */
   ros::ServiceClient calibSrv_;
-
-  /**
-   * @brief The Visualization object for the Matcher, it will allow us to
-   * publish all debug messages.
-   */
-  MatcherVis vis_;
 
   /* ---------------------------- Private Methods --------------------------- */
 

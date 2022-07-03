@@ -29,6 +29,9 @@ void Preproc::preprocess(const as_msgs::ObservationArray &observations) {
   for (const as_msgs::Observation &obs : observations.observations) {
     allObs.emplace_back(obs);
   }
+
+  // Publish markers
+  if (params_.publish_markers) vis_.publishInputMarkers(allObs);
   
   // Create a centroid vector to build a KDTree
   std::vector<Point> allCentroids;
@@ -67,6 +70,7 @@ Preproc &Preproc::getInstance() {
 
 void Preproc::init(const Params::Preproc &params) {
   params_ = params;
+  vis_.init(params);
 }
 
 void Preproc::reset() {

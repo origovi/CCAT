@@ -51,6 +51,7 @@ add_executable(${PROJECT_NAME}_exec
 add_library(${PROJECT_NAME}
   src/Manager.cpp
   src/modules/Preproc/Preproc.cpp
+  src/modules/Preproc/PreprocVis.cpp
   src/modules/Matcher/Matcher.cpp
   src/modules/Matcher/MatcherVis.cpp
   src/modules/Merger/Merger.cpp

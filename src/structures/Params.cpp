@@ -1,11 +1,11 @@
 #include "structures/Params.hpp"
 
 Params::Params(const ros::NodeHandle &nh) {
-  /**
-   * COMMON
-   */
 
-  nh.param<int>("/AS/P/ccat/common/frequency", common.frequency, 10);
+  /* ------------------------------------------------------------------------ */
+  /*                                  COMMON                                  */
+  /* ------------------------------------------------------------------------ */
+
   nh.param<std::string>("/AS/P/ccat/common/topics/input/observations", common.topics.input.observations, "/cones/observed");
   nh.param<std::string>("/AS/P/ccat/common/topics/input/odom", common.topics.input.odom, "/limovelo/state");
   nh.param<std::string>("/AS/P/ccat/common/topics/input/left_detections", common.topics.input.left_bbs, "/camera/left/detections");
@@ -13,29 +13,31 @@ Params::Params(const ros::NodeHandle &nh) {
   nh.param<std::string>("/AS/P/ccat/common/topics/output/cones", common.topics.output.cones, "/AS/P/ccat/cones");
 
 
-  /**
-   * MANAGER
-   */
+  /* ------------------------------------------------------------------------ */
+  /*                                  MANAGER                                 */
+  /* ------------------------------------------------------------------------ */
   
   nh.param<float>("/AS/P/ccat/manager/buffer_temp_mem", manager.bufferTempMem, 1.0);
+  nh.param<bool>("/AS/P/ccat/manager/only_lidar", manager.only_lidar, false);
   nh.param<bool>("/AS/P/ccat/manager/static_calib", manager.static_calib, false);
   nh.param<bool>("/AS/P/ccat/manager/publish_only_odom_update", manager.publish_only_odom_update, false);
   
-  /**
-   * PREPROC
-   */
+  /* ------------------------------------------------------------------------ */
+  /*                                  PREPROC                                 */
+  /* ------------------------------------------------------------------------ */
 
   nh.param<float>("/AS/P/ccat/preproc/cluster_dist", preproc.cluster_dist, 0.5);
+  nh.param<bool>("/AS/P/ccat/preproc/publish_markers", preproc.publish_markers, false);
+  nh.param<std::string>("/AS/P/ccat/preproc/topics/output/input_markers", preproc.topics.output.input_markers, "/AS/P/ccat/markers/input");
 
-  /**
-   * MATCHER
-   */
+  /* ------------------------------------------------------------------------ */
+  /*                                  MATCHER                                 */
+  /* ------------------------------------------------------------------------ */
 
   // Common Part
   nh.param<bool>("/AS/P/ccat/matcher/common/debug", matcherL.debug, false);
   nh.param<std::string>("/AS/P/ccat/matcher/common/match_type", matcherL.match_type, "greedy");
   nh.param<double>("/AS/P/ccat/matcher/common/max_match_search_dist", matcherL.max_match_search_dist, 50.0);
-  nh.param<double>("/AS/P/ccat/matcher/common/max_match_real_dist", matcherL.max_match_real_dist, 50.0);
   nh.param<double>("/AS/P/ccat/matcher/common/min_dist_car_able_to_match", matcherL.min_dist_car_able_to_match, 5.0);
   nh.param<int>("/AS/P/ccat/matcher/common/image_width", matcherL.image_width, 1024);
   nh.param<int>("/AS/P/ccat/matcher/common/image_height", matcherL.image_height, 768);
@@ -55,7 +57,10 @@ Params::Params(const ros::NodeHandle &nh) {
   nh.param<std::vector<float>>("/AS/P/ccat/intrinsics/left/camera_matrix", matcherL.intrinsics, std::vector<float>(9, 0.0));
   nh.param<std::vector<float>>("/AS/P/ccat/intrinsics/right/camera_matrix", matcherR.intrinsics, std::vector<float>(9, 0.0));
   
-  /* Tracker */
+  /* ------------------------------------------------------------------------ */
+  /*                                  TRACKER                                 */
+  /* ------------------------------------------------------------------------ */
+
   nh.param<bool>("/AS/P/ccat/tracker/debug", tracker.debug, false);
   nh.param<double>("/AS/P/ccat/tracker/same_cone_max_distSq", tracker.same_cone_max_distSq, 0.09);
   nh.param<bool>("/AS/P/ccat/tracker/fancy_markers", tracker.fancy_markers, false);

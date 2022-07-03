@@ -26,6 +26,7 @@
 #include "modules/Preproc/Preproc.hpp"
 #include "modules/Tracker/Tracker.hpp"
 #include "structures/Buffer.hpp"
+#include "structures/Cone.hpp"
 #include "structures/Params.hpp"
 #include "utils/Time.hpp"
 

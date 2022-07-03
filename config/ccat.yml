@@ -1,5 +1,4 @@
 common:
-  frequency:                    10
   topics:
     input:
       observations:             "/AS/P/pcl_filtering/observations"
@@ -11,18 +10,22 @@ common:
   
 manager:
   buffer_temp_mem:              1.0                                 # float (s)
+  only_lidar:                   false                               # bool, specifies whether or not to ignore the cameras
   static_calib:                 false                               # bool, makes a loop of matcher(s) run with same information, useful to calibrate when no input is received
   publish_only_odom_update:     false                               # bool, whether of not to publish markers ONLY when Odom is updated
 
 preproc:
-  cluster_dist:                 1                                   # double (m)
+  cluster_dist:                 1.5                                 # double (m)
+  publish_markers:              true                                # bool, publishes observation markers
+  topics:
+    output:
+      input_markers:            "/AS/P/ccat/markers/input"
 
 matcher:
   common:
     debug:                      true                                # bool, enables debugging tools such as markers publishing
     match_type:                 "greedy"                            # string, ["greedy", "best fit"]
-    max_match_bb_dist:          100.0                               # double (px)
-    max_match_real_dist:        50.0                                # double (m)
+    max_match_search_dist:      1.0                                 # double (px ratio)
     min_dist_car_able_to_match: 5.0                                 # double (m), minimum distance of cones (to camera plane) under which cameras are not able to detect cones
     image_width:                1024                                # int (px)
     image_height:               768                                 # int (px)

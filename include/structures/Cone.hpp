@@ -105,6 +105,8 @@ class Cone {
    */
   static Params::Tracker::Cone params;
 
+  static bool bothCams;
+
   /**
    * @brief A shared_ptr to the Observation that represents this cone.
    */

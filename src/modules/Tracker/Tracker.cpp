@@ -76,6 +76,7 @@ void Tracker::accumulate(const std::pair<const std::vector<Observation> &, const
 }
 
 void Tracker::run(const std::vector<ConeUpdate> &coneUpdates) {
+  // Update all the cones
   for (const ConeUpdate &coneUpdate : coneUpdates) {
     std::map<size_t, Cone>::iterator it = cones_.find(coneUpdate.id);
     if (it != cones_.end()) {
@@ -90,7 +91,7 @@ void Tracker::run(const std::vector<ConeUpdate> &coneUpdates) {
     vis_.publishMergedMarkers(coneUpdates, cones_);
   }
 
-  // Update the current cones
+  // Update the current cones (as_msgs)
   currentCones_.stamp = ros::Time::now();
   currentCones_.cones.clear();
   currentCones_.cones.reserve(cones_.size());
