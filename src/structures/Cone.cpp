@@ -46,7 +46,7 @@ void Cone::updateMetadata() {
   }
   double heap_meanHeur;
   bool heap_isMatched;
-  if (heap_votesM > heap_votesNM) {
+  if (heap_votesM > heap_votesNM*0.7) {
     heap_isMatched = true;
     heap_meanHeur = heap_heurM / heap_votesM;
   } else if (heap_votesNM > heap_votesM) {
@@ -88,13 +88,19 @@ void Cone::updateMetadata() {
   }
 
   // HERE IS THE UPDATE
-  metadata_.valid = true;
-  metadata_.type = ConeUpdate::NONE;
-  if (heap_isMatched) {
-    if (heapM_meanHeur > 0.007) metadata_.type = heapM_biggestType;
+  // metadata_.valid = true;
+  //metadata_.type = ConeUpdate::NONE;
+  // if (heap_isMatched) {
+  //   if (heapM_meanHeur > 0.007) metadata_.type = heapM_biggestType;
+  // }
+  // else if (Cone::bothCams and heap_meanHeur > 1/params.dist_cp_to_false_positives) {
+  //   metadata_.valid = false;
+  // }
+  if (heapM_biggestType != ConeUpdate::NONE) {
+    metadata_.type = heapM_biggestType;
   }
-  else if (Cone::bothCams and heap_meanHeur > 1/params.dist_cp_to_false_positives) {
-    metadata_.valid = false;
+  if (!heap_isMatched and Cone::bothCams and heap_meanHeur > 1/params.dist_cp_to_false_positives) {
+    metadata_.type = ConeUpdate::NONE;
   }
 }
 

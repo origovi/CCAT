@@ -15,7 +15,7 @@ manager:
   publish_only_odom_update:     false                               # bool, whether of not to publish markers ONLY when Odom is updated
 
 preproc:
-  cluster_dist:                 1.5                                 # double (m)
+  cluster_dist:                 1.0                                 # double (m)
   publish_markers:              true                                # bool, publishes observation markers
   topics:
     output:
