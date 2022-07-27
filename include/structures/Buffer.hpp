@@ -264,6 +264,23 @@ class Buffer : private std::deque<std::pair<BufferedType, ros::Time>> {
     }
     return *closestElem;
   }
+
+  bool hasOlderAndNewer(const ros::Time &t, BufferedType& e1, BufferedType &e2) const {
+    bool older = false;
+    bool newer = false;
+    for (auto it = Parent::crbegin(); it != Parent::crend() and (!older or !newer); it++) {
+      if (it->second > t) {
+        newer = true;
+        e2 = it->first;
+      }
+      else if (!newer) return false;
+      else if (it->second < t) {
+        older = true;
+        e1 = it->first;
+      }
+    }
+    return older and newer;
+  }
 };
 
 #endif  // STRUCTURES_BUFFER_HPP

@@ -80,15 +80,15 @@ void Preproc::reset() {
 /* Callbacks */
 
 void Preproc::run(const as_msgs::ObservationArray::ConstPtr &newObservations,
-                  const nav_msgs::Odometry::ConstPtr &odom,
+                  const Eigen::Affine3d &odom,
                   const geometry_msgs::PoseArray::ConstPtr &leftDetections,
                   const geometry_msgs::PoseArray::ConstPtr &rightDetections) {
   currentObservations_.clear();
-  if (odom == nullptr) {
-    ROS_ERROR("Odom is nullptr, aborting");
-    return;
-  }
-  tf::poseMsgToEigen(odom->pose.pose, carTf_);
+  // if (odom == nullptr) {
+  //   ROS_ERROR("Odom is nullptr, aborting");
+  //   return;
+  // }
+  //tf::poseMsgToEigen(odom->pose.pose, carTf_);
 
   // Invert y and z axis
   static const Eigen::Matrix4d aux = (Eigen::Matrix4d() << 1.0, 0.0, 0.0, 0.0,
@@ -98,7 +98,7 @@ void Preproc::run(const as_msgs::ObservationArray::ConstPtr &newObservations,
                                          .finished();
   // carTf_.translation().y() *= -1;
   // carTf_.translation().z() *= -1;
-  carTf_ = carTf_.inverse();
+  carTf_ = odom.inverse();
   carTf_.matrix() = carTf_.matrix() * aux;
 
   leftBBs_ = leftDetections;
