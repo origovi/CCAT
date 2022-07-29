@@ -44,7 +44,11 @@ Params::Params(const ros::NodeHandle &nh) {
   nh.param<float>("/AS/P/ccat/matcher/common/cone_width", matcherL.cone_width, 0.228);
   nh.param<float>("/AS/P/ccat/matcher/common/cone_height", matcherL.cone_height, 0.325);
   nh.param<bool>("/AS/P/ccat/matcher/common/colors_in_projected", matcherL.colors_in_projected, false);
+  nh.param<bool>("/AS/P/ccat/matcher/common/autocalib", matcherL.autocalib, false);
   nh.param<std::string>("/AS/P/ccat/matcher/common/autocalib_service_addr", matcherL.autocalib_service_addr, "/AS/P/calibration");
+  nh.param<int>("/AS/P/ccat/matcher/common/min_calib_match_num", matcherL.min_calib_match_num, 5);
+  nh.param<float>("/AS/P/ccat/matcher/common/max_calib_change_trans", matcherL.max_calib_change_trans, 1e-3);
+  nh.param<float>("/AS/P/ccat/matcher/common/max_calib_change_rot", matcherL.max_calib_change_rot, 1e-4);
   matcherR = matcherL;
 
   // Different Part

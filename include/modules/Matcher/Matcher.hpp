@@ -128,11 +128,6 @@ class Matcher {
   const Params::Matcher params_;
 
   /**
-   * @brief Specifies if the currentUpdates_ attribute data is valid or not.
-   */
-  bool hasValidData_;
-
-  /**
    * @brief Specifies if the implicit camera is well calibrated.
    */
   bool calibrated_;
@@ -220,8 +215,9 @@ class Matcher {
    * @param[out] matches A vector of Matching(s)
    * @param[out] projsToExclude For each BB, all the Matcher::Projection(s)
    * it cannot be matched to
+   * @param[in,out] match_num The number of successful matches
    */
-  void matchBestFit(const size_t &bbInd, const geometry_msgs::PoseArray &bbs, const KDTree &projsKDT, std::vector<Matching> &matches, std::vector<std::set<size_t>> &projsToExclude) const;
+  void matchBestFit(const size_t &bbInd, const geometry_msgs::PoseArray &bbs, const KDTree &projsKDT, std::vector<Matching> &matches, std::vector<std::set<size_t>> &projsToExclude, int &match_num) const;
 
   /**
    * @brief Matches the Matcher::Projection with index = \a projInd with the
@@ -233,8 +229,9 @@ class Matcher {
    * @param[in] projections A vector of all Matcher::Projection(s)
    * @param[in] bbsKDT A KDTree of every BB in the image
    * @param[out] matches A vector of Matching(s)
+   * @param[in,out] match_num The number of successful matches
    */
-  void matchGreedy(const size_t &projInd, const std::vector<Projection> &projections, const KDTree &bbsKDT, std::vector<Matching> &matches) const;
+  void matchGreedy(const size_t &projInd, const std::vector<Projection> &projections, const KDTree &bbsKDT, std::vector<Matching> &matches, int &match_num) const;
 
   /**
    * @brief Computes all the matchings, from the Matcher::Projections that are
@@ -243,8 +240,9 @@ class Matcher {
    * 
    * @param[in] projections All the Matcher::Projections
    * @param[in] bbs All the BB(s)
+   * @param[in,out] match_num The number of successful matches
    */
-  void computeMatchings(const std::vector<Projection> &projections, const geometry_msgs::PoseArray &bbs, std::vector<Matching> &matchings);
+  void computeMatchings(const std::vector<Projection> &projections, const geometry_msgs::PoseArray &bbs, std::vector<Matching> &matchings, int &match_num);
 
   /**
    * @brief Updates the currentUpdates_ attribute.
@@ -326,15 +324,6 @@ class Matcher {
    * Matcher::run() method
    */
   const std::vector<ConeUpdate> &getData() const;
-
-  /**
-   * @brief Returns whether or not this Matcher has valid data to pass to the
-   * next module (which is Merger).
-   * 
-   * @return true 
-   * @return false 
-   */
-  const bool &hasValidData() const;
 };
 
 #endif  // MODULES_MATCHER_MATCHER_HPP

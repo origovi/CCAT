@@ -79,7 +79,10 @@ struct Params {
     int image_width, image_height;
     float cone_height, cone_width;
     bool colors_in_projected;
+    bool autocalib;
     std::string autocalib_service_addr;
+    int min_calib_match_num;
+    float max_calib_change_trans, max_calib_change_rot;
     std::vector<float> intrinsics;
     struct {
       struct {

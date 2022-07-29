@@ -21,7 +21,7 @@
 
 int main(int argc, char **argv) {
   ros::init(argc, argv, "ccat");
-  ros::NodeHandle *const nh = new ros::NodeHandle("ccat");
+  ros::NodeHandle *const nh = new ros::NodeHandle;
 
   Params params(*nh);
   Visualization::init(nh);
