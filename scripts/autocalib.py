@@ -14,7 +14,7 @@ def calib(req):
     obsCentroids = [[p.x, p.y, p.z] for p in req.obsCentroids]
     bbsCentroids = [[p.x, p.y] for p in req.bbsCentroids]
 
-    newParams, changeInTransAccum, changeInRotAccum = gradDescent.update(
+    newParams = gradDescent.update(
         cents_from_imgPoints=obsCentroids,
         cents_from_BBs=bbsCentroids,
         prev_params=[req.euler_angles[0], req.euler_angles[1], req.euler_angles[2], req.translation],
@@ -25,7 +25,7 @@ def calib(req):
     print("New Translation", newParams[3])
     print("New Rotation", newParams[:3])
     print()
-    return CalibReqResponse(translation=newParams[3], euler_angles=newParams[:3], changeInTransAccum=changeInTransAccum, changeInRotAccum=changeInRotAccum)
+    return CalibReqResponse(translation=newParams[3], euler_angles=newParams[:3])
 
 
 if __name__ == "__main__":

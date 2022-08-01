@@ -139,29 +139,22 @@ def gradDescent(p, q, params, camera_matrix):
     J = createJacobian(tp=tp, roll=roll, pitch=pitch, yaw=yaw)
     Grad = dSquaredGradient(p, q, R, J, t, camera_matrix)
 
-    lr = 1e-7
+    # lr = 1e-7
+    lr = 1e-6
 
     # Gradient descent
     return [
+        # Euler angles
+        roll - lr*Grad[0],
+        pitch - lr*Grad[1],
+        yaw - lr*Grad[2],
+
+        # Translation
         [
-            # Euler angles
-            roll - lr*Grad[0],
-            pitch - lr*Grad[1],
-            yaw - lr*Grad[2],
-
-            # Translation
-            [
-                t[0] - lr*Grad[3],
-                t[1] - lr*Grad[4],
-                t[2] - lr*Grad[5]
-            ]
-        ],
-
-        # Change in rotation
-        lr*(abs(Grad[0]) + abs(Grad[1]) + abs(Grad[2])),
-
-        # Change in translation
-        lr*(abs(Grad[3]) + abs(Grad[4]) + abs(Grad[5])),
+            t[0] - lr*Grad[3],
+            t[1] - lr*Grad[4],
+            t[2] - lr*Grad[5]
+        ]
     ]
 
 # cents_from_imgPoints: 3D centroid point of each point in base_link
@@ -169,18 +162,14 @@ def gradDescent(p, q, params, camera_matrix):
 # prev_params: previous extrinsics
 def update(cents_from_imgPoints, cents_from_BBs, prev_params, camera_matrix, iters=3):
     params = prev_params
-    changeInTransAccum = 0
-    changeInRotAccum = 0
     for i in range(iters):
         for k in range(len(cents_from_imgPoints)):
             # Update parameters
-            params, changeInTrans, changeInRot = gradDescent(
+            params = gradDescent(
                 p=cents_from_imgPoints[k],
                 q=cents_from_BBs[k],
                 camera_matrix=camera_matrix,
                 params=params,
             )
-            changeInTransAccum += changeInTrans
-            changeInRotAccum += changeInRot
  
-    return params, changeInTransAccum, changeInRotAccum
+    return params

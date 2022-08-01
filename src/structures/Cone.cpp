@@ -46,20 +46,12 @@ void Cone::updateMetadata() {
   }
   double heap_meanHeur;
   bool heap_isMatched;
-  if (heap_votesM > heap_votesNM*0.7) {
+  if (heap_votesM > heap_votesNM*1e-4) {
     heap_isMatched = true;
     heap_meanHeur = heap_heurM / heap_votesM;
-  } else if (heap_votesNM > heap_votesM) {
+  } else {
     heap_isMatched = false;
     heap_meanHeur = heap_heurNM / heap_votesNM;
-  } else {  // Draw
-    if (heap_heurM > heap_heurNM) {
-      heap_isMatched = true;
-      heap_meanHeur = heap_heurM / heap_votesM;
-    } else {
-      heap_isMatched = false;
-      heap_meanHeur = heap_heurNM / heap_votesNM;
-    }
   }
 
   // Matched heap

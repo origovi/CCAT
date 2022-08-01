@@ -13,5 +13,3 @@ geometry_msgs/Point[] bbsCentroids
 # New Extrinsics
 float64[3] translation
 float64[3] euler_angles
-float32 changeInTransAccum
-float32 changeInRotAccum

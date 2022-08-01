@@ -14,6 +14,7 @@
 
 #include <ccat/CalibReq.h>
 #include <ccat/ExtrinsicsConfig.h>
+#include <dynamic_reconfigure/server.h>
 #include <cv_bridge/cv_bridge.h>
 #include <eigen_conversions/eigen_msg.h>
 #include <geometry_msgs/PoseArray.h>
@@ -157,6 +158,12 @@ class Matcher {
    */
   MatcherVis vis_;
 
+  /**
+   * @brief Server of the dynamic reconfigure for the camera extrinsics.
+   * It will be used to update the parameters on autocalib.
+   */
+  dynamic_reconfigure::Server<ccat::ExtrinsicsConfig> &cfg_cam_srv;
+
   /* -------------------------- Private Subscribers ------------------------- */
 
   /**
@@ -217,7 +224,7 @@ class Matcher {
    * it cannot be matched to
    * @param[in,out] match_num The number of successful matches
    */
-  void matchBestFit(const size_t &bbInd, const geometry_msgs::PoseArray &bbs, const KDTree &projsKDT, std::vector<Matching> &matches, std::vector<std::set<size_t>> &projsToExclude, int &match_num) const;
+  void matchBestFit(const size_t &bbInd, const std::vector<geometry_msgs::Pose> &bbs, const KDTree &projsKDT, std::vector<Matching> &matches, std::vector<std::set<size_t>> &projsToExclude, int &match_num) const;
 
   /**
    * @brief Matches the Matcher::Projection with index = \a projInd with the
@@ -242,7 +249,7 @@ class Matcher {
    * @param[in] bbs All the BB(s)
    * @param[in,out] match_num The number of successful matches
    */
-  void computeMatchings(const std::vector<Projection> &projections, const geometry_msgs::PoseArray &bbs, std::vector<Matching> &matchings, int &match_num);
+  void computeMatchings(const std::vector<Projection> &projections, const std::vector<geometry_msgs::Pose> &bbs, std::vector<Matching> &matchings, int &match_num);
 
   /**
    * @brief Updates the currentUpdates_ attribute.
@@ -284,9 +291,10 @@ class Matcher {
    * 
    * @param[in] params 
    * @param[in] nh 
+   * @param[in] cfg_cam_srv 
    * @param[in] which 
    */
-  Matcher(const Params::Matcher &params, ros::NodeHandle *const &nh, const Which &which);
+  Matcher(const Params::Matcher &params, ros::NodeHandle *const &nh, dynamic_reconfigure::Server<ccat::ExtrinsicsConfig> &cfg_cam_srv, const Which &which);
 
   /* --------------------------- Public Attributes -------------------------- */
 

@@ -24,19 +24,19 @@ preproc:
 matcher:
   common:
     debug:                      true                                # bool, enables debugging tools such as markers publishing
-    match_type:                 "greedy"                            # string, ["greedy", "best fit"]
-    max_match_search_dist:      1.0                                 # double (px ratio)
+    match_type:                 "best fit"                          # string, ["greedy", "best fit"]
+    max_match_search_dist:      1.6                                 # double (px ratio)
     min_dist_car_able_to_match: 5.0                                 # double (m), minimum distance of cones (to camera plane) under which cameras are not able to detect cones
     image_width:                1024                                # int (px)
     image_height:               768                                 # int (px)
     cone_height:                0.325                               # double (m)
     cone_width:                 0.228                               # double (m), unused
     colors_in_projected:        false                               # bool, the color of the cone points and the BB(s) will be the same in a matching
-    autocalib:                  false                               # bool, activate or deactivate autocalib srv
+    autocalib:                  false                                # bool, activate or deactivate autocalib srv
     autocalib_service_addr:     "/AS/P/ccat/calibration"
     min_calib_match_num:        5                                   # int (num), minimum number of matches to trigger autocalib
     max_calib_change_trans:     0.001                               # float (m), minimum amount of translation change to consider a Matcher "calibrated"
-    max_calib_change_rot:       0.001                               # float (rad), minimum amount of rotation change to consider a Matcher "calibrated"
+    max_calib_change_rot:       0.0001                              # float (rad), minimum amount of rotation change to consider a Matcher "calibrated"
   topics:
     output:
       left_projected:           "/AS/P/ccat/projected/left"

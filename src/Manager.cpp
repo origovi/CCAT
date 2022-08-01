@@ -174,8 +174,8 @@ void Manager::init(ros::NodeHandle *const nh, const Params &params,
   /* Initialize modules */
   preproc = &Preproc::getInstance();
   preproc->init(params.preproc);
-  matcherL = new Matcher(params.matcherL, nh, Matcher::LEFT);
-  matcherR = new Matcher(params.matcherR, nh, Matcher::RIGHT);
+  matcherL = new Matcher(params.matcherL, nh, cfgSrv_extr_left, Matcher::LEFT);
+  matcherR = new Matcher(params.matcherR, nh, cfgSrv_extr_right, Matcher::RIGHT);
   merger = &Merger::getInstance();
   merger->init(params.merger);
   tracker = &Tracker::getInstance();

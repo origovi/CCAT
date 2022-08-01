@@ -75,15 +75,14 @@ double Matcher::bbHeightFromZ(const double &z) const {
 
 Point Matcher::bbCentroidAndHeight(const geometry_msgs::Pose &bb) {
   return Point((bb.orientation.x + bb.orientation.z) / 2, (bb.orientation.y + bb.orientation.w) / 2, abs(bb.orientation.y - bb.orientation.w));
-  //return Point((bb.orientation.x + bb.orientation.z) / 2, (bb.orientation.y + bb.orientation.w) / 2, 0.0);
 }
 
 bool Matcher::isMatchingPossible(const double &matchingDist, const double &bbHeight) const {
   return matchingDist / bbHeight < params_.max_match_search_dist;
 }
 
-void Matcher::matchBestFit(const size_t &bbInd, const geometry_msgs::PoseArray &bbs, const KDTree &projsKDT, std::vector<Matching> &matches, std::vector<std::set<size_t>> &projsToExclude, int &match_num) const {
-  Point bbCentroidAndHeightP(bbCentroidAndHeight(bbs.poses[bbInd]));
+void Matcher::matchBestFit(const size_t &bbInd, const std::vector<geometry_msgs::Pose> &bbs, const KDTree &projsKDT, std::vector<Matching> &matches, std::vector<std::set<size_t>> &projsToExclude, int &match_num) const {
+  Point bbCentroidAndHeightP(bbCentroidAndHeight(bbs[bbInd]));
   bool isFirst = true;
   pointIndexV projPointInd;
   projPointInd = projsKDT.nearest_pointIndex(bbCentroidAndHeightP, projsToExclude[bbInd]);
@@ -91,7 +90,7 @@ void Matcher::matchBestFit(const size_t &bbInd, const geometry_msgs::PoseArray &
 
   while (ros::ok() and (isFirst or dist >= matches[projPointInd->second].dist())) {
     // No matching is possible
-    if (!bool(projPointInd) or dist > params_.max_match_search_dist) {
+    if (!bool(projPointInd) or !isMatchingPossible(dist, bbCentroidAndHeight(bbs[bbInd]).z)) {
       return;
     }
 
@@ -144,7 +143,7 @@ void Matcher::matchGreedy(const size_t &projInd, const std::vector<Projection> &
   }
 }
 
-void Matcher::computeMatchings(const std::vector<Projection> &projections, const geometry_msgs::PoseArray &bbs, std::vector<Matching> &matchings, int &match_num) {
+void Matcher::computeMatchings(const std::vector<Projection> &projections, const std::vector<geometry_msgs::Pose> &bbs, std::vector<Matching> &matchings, int &match_num) {
   matchings.resize(projections.size());
 
   /* Two types of matching search */
@@ -153,7 +152,7 @@ void Matcher::computeMatchings(const std::vector<Projection> &projections, const
   // We will match each bounding box to the closest (with a best fit),
   // that means that each bounding box will be matched only once.
   if (params_.match_type == "best fit") {
-    std::vector<std::set<size_t>> projsToExclude(bbs.poses.size());
+    std::vector<std::set<size_t>> projsToExclude(bbs.size());
 
     std::vector<Point> pointsToBuildKDTree;
     pointsToBuildKDTree.reserve(projections.size());
@@ -161,7 +160,7 @@ void Matcher::computeMatchings(const std::vector<Projection> &projections, const
       pointsToBuildKDTree.emplace_back(proj.imageCentroid.x, proj.imageCentroid.y, bbHeightFromZ(proj.data->centroid_cam.x));
     }
     KDTree projsKDT(pointsToBuildKDTree);
-    for (size_t bbInd = 0; bbInd < bbs.poses.size(); bbInd++) {
+    for (size_t bbInd = 0; bbInd < bbs.size(); bbInd++) {
       matchBestFit(bbInd, bbs, projsKDT, matchings, projsToExclude, match_num);
     }
   }
@@ -172,8 +171,8 @@ void Matcher::computeMatchings(const std::vector<Projection> &projections, const
     // Each Point will have X and Y (image coordinates) and the Z will be the
     // height (in pixels) that the BB of the cone would have.
     std::vector<Point> pointsToBuildKDTree;
-    pointsToBuildKDTree.reserve(bbs.poses.size());
-    for (const geometry_msgs::Pose &bb : bbs.poses) {
+    pointsToBuildKDTree.reserve(bbs.size());
+    for (const geometry_msgs::Pose &bb : bbs) {
       pointsToBuildKDTree.push_back(bbCentroidAndHeight(bb));
     }
     KDTree bbsKDT(pointsToBuildKDTree);
@@ -242,6 +241,10 @@ void Matcher::autocalib(const std::vector<Projection> &projections, const geomet
 
   // Call the calibration service
   if (calibSrv_.call(req)) {
+    float changeInTrans = abs(req.request.translation[0] - req.response.translation[0]) + abs(req.request.translation[1] - req.response.translation[1]) + abs(req.request.translation[2] - req.response.translation[2]);
+    float changeInRot = abs(req.request.euler_angles[0] - req.response.euler_angles[0]) + abs(req.request.euler_angles[1] - req.response.euler_angles[1]) + abs(req.request.euler_angles[2] - req.response.euler_angles[2]);;
+    std::cout << changeInTrans << " " << changeInRot << std::endl;
+
     // Update the extrinsics
     Eigen::Quaterniond rotationQ(
         Eigen::AngleAxisd(req.response.euler_angles[0], Eigen::Vector3d::UnitX()) *
@@ -249,13 +252,21 @@ void Matcher::autocalib(const std::vector<Projection> &projections, const geomet
         Eigen::AngleAxisd(req.response.euler_angles[2], Eigen::Vector3d::UnitZ()));
     extrinsics_.linear() = rotationQ.toRotationMatrix();
     extrinsics_.translation() = Eigen::Vector3d(req.response.translation.data());
-    float changeInTransAccum = req.response.changeInTransAccum;
-    float changeInRotAccum = req.response.changeInRotAccum;
-    if (abs(req.response.changeInTransAccum) <= params_.max_calib_change_trans and abs(req.response.changeInRotAccum) <= params_.max_calib_change_rot) {
+
+    if (changeInTrans <= params_.max_calib_change_trans and changeInRot <= params_.max_calib_change_rot) {
       calibrated_ = true;
       ROS_WARN_STREAM("[ccat] " << (which == LEFT ? "L-" : "R-") << "Matcher calibrated succesfully!");
+    } else {
+      ROS_INFO_STREAM("[ccat] " << (which == LEFT ? "L-" : "R-") << "Matcher still trying to calibrate");
     }
-    ROS_INFO_STREAM("[ccat] " << (which == LEFT ? "L-" : "R-") << "Matcher still trying to calibrate");
+    ccat::ExtrinsicsConfig conf;
+    conf.x = req.response.translation[0];
+    conf.y = req.response.translation[1];
+    conf.z = req.response.translation[2];
+    conf.roll = req.response.euler_angles[0];
+    conf.pitch = req.response.euler_angles[1];
+    conf.yaw = req.response.euler_angles[2];
+    cfg_cam_srv.updateConfig(conf);
   } else {
     ROS_ERROR("[ccat] Failed to call Calibration Service");
   }
@@ -265,7 +276,7 @@ void Matcher::autocalib(const std::vector<Projection> &projections, const geomet
 /*                                   PUBLIC                                   */
 /* -------------------------------------------------------------------------- */
 
-Matcher::Matcher(const Params::Matcher &params, ros::NodeHandle *const &nh, const Which &which) : which(which), params_(params), intrinsics_(params.intrinsics.data()), vis_(params) {
+Matcher::Matcher(const Params::Matcher &params, ros::NodeHandle *const &nh, dynamic_reconfigure::Server<ccat::ExtrinsicsConfig> &cfg_cam_srv, const Which &which) : which(which), params_(params), cfg_cam_srv(cfg_cam_srv), intrinsics_(params.intrinsics.data()), vis_(params) {
   calibrated_ = !params.autocalib;
 
   // Calibration service instantiation
@@ -325,7 +336,7 @@ void Matcher::run(const std::vector<Observation::Ptr> &observations, const geome
   // 4: Now obtain the matches
   std::vector<Matching> matchings;
   int match_num = 0;
-  computeMatchings(projs, *bbs, matchings, match_num);
+  computeMatchings(projs, bbs->poses, matchings, match_num);
 
   // If debug:
   // - publish the images showing the projections (aka calibration)
