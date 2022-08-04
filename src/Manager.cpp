@@ -57,66 +57,54 @@ void Manager::runIfPossible(const Update &update) {
       odom.second = buffOdom_->newestElem().second;
     } else if (mode_ == L_CAM) {
       if (update == R_BBS) return;
-      nav_msgs::Odometry::ConstPtr o0;
-      if (!buffOdom_->isSynchWith(*buffLeftBBs_, o0, leftBBs)) return;
-      if (leftBBs->header.stamp == lastRunOdom_.second) return;
       nav_msgs::Odometry::ConstPtr o1, o2;
-      if (!buffOdom_->hasOlderAndNewer(leftBBs->header.stamp, o1, o2)) return;
+      if (!buffLeftBBs_->dataWithBoundsInBuffParam(*buffOdom_, leftBBs, o1, o2)) return;
+      if (leftBBs->header.stamp < lastRunLeftStamp_) return;
       odom.first = poseInterpolation(leftBBs->header.stamp, o1, o2);
       odom.second = leftBBs->header.stamp;
       ROS_WARN("L_CAM");
     } else if (mode_ == R_CAM) {
       if (update == L_BBS) return;
-      nav_msgs::Odometry::ConstPtr o0;
-      if (!buffOdom_->isSynchWith(*buffRightBBs_, o0, rightBBs)) return;
-      if (rightBBs->header.stamp == lastRunOdom_.second) return;
       nav_msgs::Odometry::ConstPtr o1, o2;
-      if (!buffOdom_->hasOlderAndNewer(rightBBs->header.stamp, o1, o2)) return;
+      if (!buffRightBBs_->dataWithBoundsInBuffParam(*buffOdom_, rightBBs, o1, o2)) return;
+      if (rightBBs->header.stamp < lastRunRightStamp_) return;
       odom.first = poseInterpolation(rightBBs->header.stamp, o1, o2);
       odom.second = rightBBs->header.stamp;
       ROS_WARN("R_CAM");
     }
     // BOTH_CAMS
     else {
-      nav_msgs::Odometry::ConstPtr odomLeft, odomRight;
+      nav_msgs::Odometry::ConstPtr odomLeft1, odomLeft2, odomRight1, odomRight2;
       geometry_msgs::PoseArray::ConstPtr rightBBsTemp, leftBBsTemp;
-      bool leftSync = buffOdom_->isSynchWith(*buffLeftBBs_, odomLeft, leftBBsTemp);
-      bool rightSync = buffOdom_->isSynchWith(*buffRightBBs_, odomRight, rightBBsTemp);
+      bool leftSync = buffLeftBBs_->dataWithBoundsInBuffParam(*buffOdom_, leftBBsTemp, odomLeft1, odomLeft2);
+      bool rightSync = buffRightBBs_->dataWithBoundsInBuffParam(*buffOdom_, rightBBsTemp, odomRight1, odomRight2);
       if (!leftSync and !rightSync) return;
-      if (leftSync) {
-        if (lastRunLeftBBs_ == nullptr or leftBBsTemp->header.stamp > lastRunLeftBBs_->header.stamp) {
-          nav_msgs::Odometry::ConstPtr o1, o2;
-          if (buffOdom_->hasOlderAndNewer(leftBBsTemp->header.stamp, o1, o2)) {
-            odom.first = poseInterpolation(leftBBsTemp->header.stamp, o1, o2);
-            odom.second = leftBBsTemp->header.stamp;
-            leftBBs = leftBBsTemp;
-          }
-        }
+      if (leftSync and leftBBsTemp->header.stamp > lastRunLeftStamp_) {
+        odom.first = poseInterpolation(leftBBsTemp->header.stamp, odomLeft1, odomLeft2);
+        odom.second = leftBBsTemp->header.stamp;
+        leftBBs = leftBBsTemp;
       }
-      if (rightSync) {
-        if (lastRunRightBBs_ == nullptr or rightBBsTemp->header.stamp > lastRunRightBBs_->header.stamp) {
-          nav_msgs::Odometry::ConstPtr o1, o2;
-          if (buffOdom_->hasOlderAndNewer(rightBBsTemp->header.stamp, o1, o2)) {
-            if (leftSync) {
-              if (rightBBsTemp->header.stamp < odom.second) {
-                leftBBs = nullptr;
-                odom.first = poseInterpolation(rightBBsTemp->header.stamp, o1, o2);
-                odom.second = rightBBsTemp->header.stamp;
-                rightBBs = rightBBsTemp;
-              } else if (rightBBsTemp->header.stamp == odom.second) {
-                rightBBs = rightBBsTemp;
-              }
-            } else {
-              odom.first = poseInterpolation(rightBBsTemp->header.stamp, o1, o2);
-              odom.second = rightBBsTemp->header.stamp;
-              rightBBs = rightBBsTemp;
-            }
+      if (rightSync and rightBBsTemp->header.stamp > lastRunRightStamp_) {
+        if (leftSync and leftBBsTemp->header.stamp > lastRunLeftStamp_) {
+          if (rightBBsTemp->header.stamp < leftBBsTemp->header.stamp) {
+            leftBBs = nullptr;
+            odom.first = poseInterpolation(rightBBsTemp->header.stamp, odomRight1, odomRight2);
+            odom.second = rightBBsTemp->header.stamp;
+            rightBBs = rightBBsTemp;
+          } else if (rightBBsTemp->header.stamp == leftBBsTemp->header.stamp) {
+            rightBBs = rightBBsTemp;
           }
+        } else {
+          odom.first = poseInterpolation(rightBBsTemp->header.stamp, odomRight1, odomRight2);
+          odom.second = rightBBsTemp->header.stamp;
+          rightBBs = rightBBsTemp;
         }
       }
       ROS_WARN("BOTH_CAMS");
     }
     if (odom.second < lastRunOdom_.second) {
+      ROS_WARN("EP");
+      std::cout << odom.second << std::endl;
       return;
     }
   }
@@ -125,6 +113,8 @@ void Manager::runIfPossible(const Update &update) {
   lastRunOdom_ = odom;
   lastRunRightBBs_ = rightBBs;
   lastRunLeftBBs_ = leftBBs;
+  if (rightBBs != nullptr) lastRunRightStamp_ = rightBBs->header.stamp;
+  if (leftBBs != nullptr) lastRunLeftStamp_ = leftBBs->header.stamp;
 
   // Run
   run();

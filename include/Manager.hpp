@@ -67,6 +67,7 @@ class Manager {
   /* Last run params */
   std::pair<Eigen::Affine3d, ros::Time> lastRunOdom_;
   as_msgs::ObservationArray::ConstPtr lastRunObs_;
+  ros::Time lastRunLeftStamp_, lastRunRightStamp_;
   geometry_msgs::PoseArray::ConstPtr lastRunLeftBBs_, lastRunRightBBs_;
 
   enum Mode { NONE,
