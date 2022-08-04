@@ -14,9 +14,11 @@
 
 #include <as_msgs/ObservationArray.h>
 #include <ccat/ExtrinsicsConfig.h>
+#include <ccat/TimeDiffConfig.h>
 #include <dynamic_reconfigure/server.h>
 #include <geometry_msgs/PoseArray.h>
 #include <nav_msgs/Odometry.h>
+#include <eigen_conversions/eigen_msg.h>
 #include <omp.h>
 #include <ros/callback_queue.h>
 #include <ros/ros.h>
@@ -60,12 +62,13 @@ class Manager {
   ros::Publisher conesPub_;
   Params::Manager params_;
   ros::CallbackQueue *calibQueue_;
+  double timeDiff_;
 
   /* Last run params */
-  nav_msgs::Odometry::ConstPtr lastRunOdom_;
+  std::pair<Eigen::Affine3d, ros::Time> lastRunOdom_;
   as_msgs::ObservationArray::ConstPtr lastRunObs_;
+  ros::Time lastRunLeftStamp_, lastRunRightStamp_;
   geometry_msgs::PoseArray::ConstPtr lastRunLeftBBs_, lastRunRightBBs_;
-  geometry_msgs::PoseArray::ConstPtr lastRunValidLeftBBs_, lastRunValidRightBBs_;
 
   enum Mode { NONE,
               L_ONLY,
@@ -102,8 +105,19 @@ class Manager {
    * @brief Updates the working mode. LiDAR only, camera only, ...
    */
   void updateMode();
+  
+  /**
+   * @brief Determines if the Buffer \a buff has valid data
+   * 
+   * @tparam BufferedType 
+   * @param buff 
+   * @return true 
+   * @return false 
+   */
   template <typename BufferedType>
   bool buffHasValidData(const Buffer<BufferedType> &buff) const;
+
+  Eigen::Affine3d poseInterpolation(const ros::Time &t, const nav_msgs::Odometry::ConstPtr &o1, const nav_msgs::Odometry::ConstPtr &o2) const;
 
  public:
   /* --------------------------- Singleton Pattern -------------------------- */
@@ -126,7 +140,8 @@ class Manager {
             const ros::Publisher &conesPub,
             dynamic_reconfigure::Server<ccat::ExtrinsicsConfig> &cfgSrv_extr_left,
             dynamic_reconfigure::Server<ccat::ExtrinsicsConfig> &cfgSrv_extr_right,
-            ros::CallbackQueue *const calibQueue);
+            ros::CallbackQueue *const calibQueue,
+            dynamic_reconfigure::Server<ccat::TimeDiffConfig> &cfgSrv_timeDiff);
 
   /* ---------------------------- Public Methods ---------------------------- */
 
@@ -134,6 +149,8 @@ class Manager {
   void rightBBsCallback(const geometry_msgs::PoseArray::ConstPtr &bbs);
   void odomCallback(const nav_msgs::Odometry::ConstPtr &odom);
   void obsCallback(const as_msgs::ObservationArray::ConstPtr &observations);
+  void cfgCallback(const ccat::TimeDiffConfig &config, uint32_t level);
+
 };
 
 #endif  // MANAGER_HPP

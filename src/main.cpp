@@ -11,6 +11,7 @@
 
 #include <as_msgs/ConeArray.h>
 #include <ccat/ExtrinsicsConfig.h>
+#include <ccat/TimeDiffConfig.h>
 #include <dynamic_reconfigure/server.h>
 #include <ros/callback_queue.h>
 #include <ros/ros.h>
@@ -42,15 +43,18 @@ int main(int argc, char **argv) {
   /* Publisher */
   ros::Publisher pubCones = nh->advertise<as_msgs::ConeArray>(params.common.topics.output.cones, 1);
 
-  /* Dynamic Reconfigure of camera extrinsics*/
+  /* Dynamic Reconfigure of camera extrinsics */
   // We need to declare two NHs because there must be only one dyn_rec::Server per NH
   ros::NodeHandle nh_cfg_left(*nh, "cfg_left_cam"), nh_cfg_right(*nh, "cfg_right_cam");
   nh_cfg_left.setCallbackQueue(&calibQueue);
   nh_cfg_right.setCallbackQueue(&calibQueue);
   dynamic_reconfigure::Server<ccat::ExtrinsicsConfig> cfgSrv_extr_left(nh_cfg_left), cfgSrv_extr_right(nh_cfg_right);
 
+  /* Dynamic Reconfigure of time difference (odom - BBs) */
+  dynamic_reconfigure::Server<ccat::TimeDiffConfig> cfgSrv_timeDiff;
+
   /* Manager initilization */
-  manager.init(nh, params, pubCones, cfgSrv_extr_left, cfgSrv_extr_right, &calibQueue);
+  manager.init(nh, params, pubCones, cfgSrv_extr_left, cfgSrv_extr_right, &calibQueue, cfgSrv_timeDiff);
 
   // Enjoy
   ros::spin();

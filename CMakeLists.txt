@@ -31,6 +31,7 @@ generate_messages(
 
 generate_dynamic_reconfigure_options(
   cfg/Extrinsics.cfg
+  cfg/TimeDiff.cfg
 )
 
 catkin_package(

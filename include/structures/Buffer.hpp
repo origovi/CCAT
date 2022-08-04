@@ -264,6 +264,51 @@ class Buffer : private std::deque<std::pair<BufferedType, ros::Time>> {
     }
     return *closestElem;
   }
+
+  /**
+   * @brief Finds the elements just before and after \a t
+   * 
+   * @param[in] t is the reference stamp
+   * @param[out] e1 is the element with stamp just before \a t
+   * @param[out] e2 is the element with stamp just after \a t
+   */
+  bool hasOlderAndNewer(const ros::Time &t, BufferedType& e1, BufferedType &e2) const {
+    bool older = false;
+    bool newer = false;
+    for (auto it = Parent::crbegin(); it != Parent::crend() and (!older or !newer); it++) {
+      if (it->second > t) {
+        newer = true;
+        e2 = it->first;
+      }
+      else if (!newer) return false;
+      else if (it->second < t) {
+        older = true;
+        e1 = it->first;
+      }
+    }
+    return older and newer;
+  }
+
+  /**
+   * @brief Synchronizes \a this and \a buffer and returns the latest element in
+   * \a this that has an element before and after in \a buffer
+   * 
+   * @param[in] buffer is a Buffer to which data will be synchronized
+   * @param[out] data latest element in \a this that has an element before and after in \a buffer
+   * @param[out] lowerBound element just before \a data in \a buffer
+   * @param[out] upperBound element just after \a data in \a buffer
+   * @returns whether or not the synchronization was successful
+   */
+  template <typename BufferedType2>
+  bool dataWithBoundsInBuffParam(const Buffer<BufferedType2> &buffer, BufferedType &data, BufferedType2 &lowerBound, BufferedType2 &upperBound) const {
+    for (auto it = Parent::crbegin(); it != Parent::crend(); it++) {
+      if (buffer.hasOlderAndNewer(it->second, lowerBound, upperBound)) {
+        data = it->first;
+        return true;
+      }
+    }
+    return false;
+  }
 };
 
 #endif  // STRUCTURES_BUFFER_HPP

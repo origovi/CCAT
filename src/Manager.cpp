@@ -15,18 +15,18 @@ Manager::~Manager() {
 
 void Manager::run() const {
   Time::tick("main");
-  #pragma omp parallel num_threads(2)
-  #pragma omp single
+#pragma omp parallel num_threads(2)
+#pragma omp single
   {
     // std::cout << omp_get_num_threads() << " threads" << std::endl;
-    preproc->run(lastRunObs_, lastRunOdom_, lastRunLeftBBs_, lastRunRightBBs_);
+    preproc->run(lastRunObs_, lastRunOdom_.first, lastRunLeftBBs_, lastRunRightBBs_);
     tracker->accumulate(preproc->getData());
     calibQueue_->callAvailable();
-    #pragma omp task
+#pragma omp task
     matcherL->run(tracker->getObservations(), preproc->getBBs(matcherL->which));
-    #pragma omp task
+#pragma omp task
     matcherR->run(tracker->getObservations(), preproc->getBBs(matcherR->which));
-    #pragma omp taskwait
+#pragma omp taskwait
     merger->run(matcherL->getData(), matcherR->getData());
     tracker->run(merger->getData());
     std::cout << std::endl;
@@ -42,7 +42,7 @@ void Manager::run() const {
 void Manager::runIfPossible(const Update &update) {
   if (mode_ == NONE) return;
 
-  nav_msgs::Odometry::ConstPtr odom;
+  std::pair<Eigen::Affine3d, ros::Time> odom;
   geometry_msgs::PoseArray::ConstPtr leftBBs, rightBBs;
 
   if (update == OBS) {
@@ -53,58 +53,59 @@ void Manager::runIfPossible(const Update &update) {
     if (mode_ == L_ONLY) {
       if (update != ODOM) return;
       ROS_WARN("L_ONLY");
-      odom = buffOdom_->newestElem().first;
+      tf::poseMsgToEigen(buffOdom_->newestElem().first->pose.pose, odom.first);
+      odom.second = buffOdom_->newestElem().second;
     } else if (mode_ == L_CAM) {
       if (update == R_BBS) return;
-      if (!buffOdom_->isSynchWith(*buffLeftBBs_, odom, leftBBs)) return;
-      if (lastRunOdom_ != nullptr and lastRunOdom_->header.stamp > odom->header.stamp) return;
-      if (odom == lastRunOdom_ and leftBBs == lastRunLeftBBs_) return;
+      nav_msgs::Odometry::ConstPtr o1, o2;
+      if (!buffLeftBBs_->dataWithBoundsInBuffParam(*buffOdom_, leftBBs, o1, o2)) return;
+      if (leftBBs->header.stamp < lastRunLeftStamp_) return;
+      odom.first = poseInterpolation(leftBBs->header.stamp, o1, o2);
+      odom.second = leftBBs->header.stamp;
       ROS_WARN("L_CAM");
     } else if (mode_ == R_CAM) {
       if (update == L_BBS) return;
-      if (!buffOdom_->isSynchWith(*buffRightBBs_, odom, rightBBs)) return;
-      if (lastRunOdom_ != nullptr and lastRunOdom_->header.stamp > odom->header.stamp) return;
-      if (odom == lastRunOdom_ and rightBBs == lastRunRightBBs_) return;
+      nav_msgs::Odometry::ConstPtr o1, o2;
+      if (!buffRightBBs_->dataWithBoundsInBuffParam(*buffOdom_, rightBBs, o1, o2)) return;
+      if (rightBBs->header.stamp < lastRunRightStamp_) return;
+      odom.first = poseInterpolation(rightBBs->header.stamp, o1, o2);
+      odom.second = rightBBs->header.stamp;
       ROS_WARN("R_CAM");
     }
     // BOTH_CAMS
     else {
-      nav_msgs::Odometry::ConstPtr odomLeft, odomRight;
+      nav_msgs::Odometry::ConstPtr odomLeft1, odomLeft2, odomRight1, odomRight2;
       geometry_msgs::PoseArray::ConstPtr rightBBsTemp, leftBBsTemp;
-      bool rightSync = buffOdom_->isSynchWith(*buffRightBBs_, odomRight, rightBBsTemp);
-      bool leftSync = buffOdom_->isSynchWith(*buffLeftBBs_, odomLeft, leftBBsTemp);
+      bool leftSync = buffLeftBBs_->dataWithBoundsInBuffParam(*buffOdom_, leftBBsTemp, odomLeft1, odomLeft2);
+      bool rightSync = buffRightBBs_->dataWithBoundsInBuffParam(*buffOdom_, rightBBsTemp, odomRight1, odomRight2);
       if (!leftSync and !rightSync) return;
-      ROS_WARN("BOTH_CAMS");
-      if (leftSync and rightSync) {
-        if (odomRight == odomLeft) {
-          odom = odomRight;
-          leftBBs = leftBBsTemp;
-          rightBBs = rightBBsTemp;
-        } else if (odomRight->header.stamp > odomLeft->header.stamp) {
-          if (lastRunOdom_ != nullptr and odomLeft->header.stamp > lastRunOdom_->header.stamp) {
-            odom = odomLeft;
-            leftBBs = leftBBsTemp;
-          } else {
-            odom = odomRight;
+      if (leftSync and leftBBsTemp->header.stamp > lastRunLeftStamp_) {
+        odom.first = poseInterpolation(leftBBsTemp->header.stamp, odomLeft1, odomLeft2);
+        odom.second = leftBBsTemp->header.stamp;
+        leftBBs = leftBBsTemp;
+      }
+      if (rightSync and rightBBsTemp->header.stamp > lastRunRightStamp_) {
+        if (leftSync and leftBBsTemp->header.stamp > lastRunLeftStamp_) {
+          if (rightBBsTemp->header.stamp < leftBBsTemp->header.stamp) {
+            leftBBs = nullptr;
+            odom.first = poseInterpolation(rightBBsTemp->header.stamp, odomRight1, odomRight2);
+            odom.second = rightBBsTemp->header.stamp;
+            rightBBs = rightBBsTemp;
+          } else if (rightBBsTemp->header.stamp == leftBBsTemp->header.stamp) {
             rightBBs = rightBBsTemp;
           }
         } else {
-          if (lastRunOdom_ != nullptr and odomRight->header.stamp > lastRunOdom_->header.stamp) {
-            odom = odomRight;
-            rightBBs = rightBBsTemp;
-          } else {
-            odom = odomLeft;
-            leftBBs = leftBBsTemp;
-          }
+          odom.first = poseInterpolation(rightBBsTemp->header.stamp, odomRight1, odomRight2);
+          odom.second = rightBBsTemp->header.stamp;
+          rightBBs = rightBBsTemp;
         }
-      } else if (leftSync) {
-        odom = odomLeft;
-        leftBBs = leftBBsTemp;
-      } else {
-        odom = odomRight;
-        rightBBs = rightBBsTemp;
       }
-      if (lastRunOdom_ != nullptr and lastRunOdom_->header.stamp > odom->header.stamp) return;
+      ROS_WARN("BOTH_CAMS");
+    }
+    if (odom.second < lastRunOdom_.second) {
+      ROS_WARN("EP");
+      std::cout << odom.second << std::endl;
+      return;
     }
   }
 
@@ -112,6 +113,8 @@ void Manager::runIfPossible(const Update &update) {
   lastRunOdom_ = odom;
   lastRunRightBBs_ = rightBBs;
   lastRunLeftBBs_ = leftBBs;
+  if (rightBBs != nullptr) lastRunRightStamp_ = rightBBs->header.stamp;
+  if (leftBBs != nullptr) lastRunLeftStamp_ = leftBBs->header.stamp;
 
   // Run
   run();
@@ -153,6 +156,27 @@ bool Manager::buffHasValidData(const Buffer<BufferedType> &buff) const {
   return buff.size() >= 5 and ros::Time::now() - buff.newestStamp() < ros::Duration(1.0);
 }
 
+Eigen::Affine3d Manager::poseInterpolation(const ros::Time &t, const nav_msgs::Odometry::ConstPtr &o1, const nav_msgs::Odometry::ConstPtr &o2) const {
+  ros::Time t1 = o1->header.stamp + ros::Duration(timeDiff_);
+  ros::Time t2 = o2->header.stamp + ros::Duration(timeDiff_);
+
+  double alpha = 0.0;
+  if (t2 != t1) {
+    alpha = (t - t1).toSec() / (t2 - t1).toSec();
+  }
+
+  Eigen::Affine3d a1, a2;
+  tf::poseMsgToEigen(o1->pose.pose, a1);
+  tf::poseMsgToEigen(o2->pose.pose, a2);
+  Eigen::Quaternion<double> rot1(a1.linear());
+  Eigen::Quaternion<double> rot2(a2.linear());
+
+  Eigen::Affine3d res;
+  res.translation() = (1.0 - alpha) * a1.translation() + alpha * a2.translation();
+  res.linear() = rot1.slerp(alpha, rot2).toRotationMatrix();
+  return res;
+}
+
 /* -------------------------------------------------------------------------- */
 /*                                   PUBLIC                                   */
 /* -------------------------------------------------------------------------- */
@@ -166,7 +190,8 @@ void Manager::init(ros::NodeHandle *const nh, const Params &params,
                    const ros::Publisher &conesPub,
                    dynamic_reconfigure::Server<ccat::ExtrinsicsConfig> &cfgSrv_extr_left,
                    dynamic_reconfigure::Server<ccat::ExtrinsicsConfig> &cfgSrv_extr_right,
-                   ros::CallbackQueue *const calibQueue) {
+                   ros::CallbackQueue *const calibQueue,
+                   dynamic_reconfigure::Server<ccat::TimeDiffConfig> &cfgSrv_timeDiff) {
   conesPub_ = conesPub;
   params_ = params.manager;
   calibQueue_ = calibQueue;
@@ -183,6 +208,8 @@ void Manager::init(ros::NodeHandle *const nh, const Params &params,
 
   cfgSrv_extr_left.setCallback(boost::bind(&Matcher::cfgCallback, matcherL, _1, _2));
   cfgSrv_extr_right.setCallback(boost::bind(&Matcher::cfgCallback, matcherR, _1, _2));
+
+  cfgSrv_timeDiff.setCallback(boost::bind(&Manager::cfgCallback, this, _1, _2));
 
   /* Initialize attributes */
   buffLeftBBs_ = new Buffer<geometry_msgs::PoseArray::ConstPtr>(params.manager.bufferTempMem);
@@ -205,7 +232,7 @@ void Manager::rightBBsCallback(const geometry_msgs::PoseArray::ConstPtr &bbs) {
 }
 
 void Manager::odomCallback(const nav_msgs::Odometry::ConstPtr &odom) {
-  buffOdom_->add(odom, odom->header.stamp);
+  buffOdom_->add(odom, odom->header.stamp + ros::Duration(timeDiff_));
   updateMode();
   runIfPossible(ODOM);
 }
@@ -214,4 +241,9 @@ void Manager::obsCallback(const as_msgs::ObservationArray::ConstPtr &observation
   latestObs_ = observations;
   updateMode();
   runIfPossible(OBS);
+}
+
+void Manager::cfgCallback(const ccat::TimeDiffConfig &config, uint32_t level) {
+  timeDiff_ = config.time_diff;
+  ROS_WARN("cfg callback");
 }

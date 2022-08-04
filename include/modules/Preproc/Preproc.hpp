@@ -14,7 +14,6 @@
 
 #include <as_msgs/Observation.h>
 #include <as_msgs/ObservationArray.h>
-#include <eigen_conversions/eigen_msg.h>
 #include <geometry_msgs/PoseArray.h>
 #include <nav_msgs/Odometry.h>
 #include <ros/ros.h>
@@ -139,7 +138,7 @@ class Preproc {
    * @param[in] rightBBs Newest bounding boxes from right camera
    */
   void run(const as_msgs::ObservationArray::ConstPtr &newObservations,
-           const nav_msgs::Odometry::ConstPtr &odom,
+           const Eigen::Affine3d &odom,
            const geometry_msgs::PoseArray::ConstPtr &leftBBs,
            const geometry_msgs::PoseArray::ConstPtr &rightBBs);
 
