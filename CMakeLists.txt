@@ -5,7 +5,7 @@ add_compile_options(-std=c++17)
 set(CMAKE_BUILD_TYPE "Release")
 
 message(STATUS "Welcome to CCAT :)")
-find_package(catkin REQUIRED COMPONENTS roscpp std_msgs as_msgs pcl_ros tf tf_conversions eigen_conversions image_transport cv_bridge dynamic_reconfigure)
+find_package(catkin REQUIRED COMPONENTS roscpp std_msgs as_msgs shrd_msgs pcl_ros tf tf_conversions eigen_conversions image_transport cv_bridge dynamic_reconfigure)
 find_package(Eigen3 REQUIRED)
 
 find_package(OpenMP REQUIRED)
@@ -26,6 +26,7 @@ generate_messages(
   DEPENDENCIES
   as_msgs
   std_msgs
+  shrd_msgs
   geometry_msgs
 )
 
