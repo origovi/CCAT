@@ -54,12 +54,6 @@ class Preproc {
   std::vector<Observation> currentObservations_;
 
   /**
-   * @brief Specifies whether or not currentObservations_ attribute has valid
-   * data.
-   */
-  bool hasData_;
-
-  /**
    * @brief Original stamp of currentObservations_. It is used to determine
    * if an incoming data is older than current data. If so,
    * currentObservations_ is not modified.
@@ -143,11 +137,6 @@ class Preproc {
            const geometry_msgs::PoseArray::ConstPtr &rightBBs);
 
   /**
-   * @brief Invalidates all data that the module could have.
-   */
-  void reset();
-
-  /**
    * @brief Returns the bounding boxes of the camera specified by \a which.
    * 
    * @param[in] which 
@@ -162,14 +151,6 @@ class Preproc {
    * @return A tuple containing the data
    */
   std::pair<const std::vector<Observation> &, const Eigen::Affine3d &> getData() const;
-
-  /**
-   * @brief A getter to check whether or not the Preproc module has valid data.
-   * 
-   * @return true 
-   * @return false 
-   */
-  const bool &hasData() const;
 
   /**
    * @brief A getter for the car transform (global-local)

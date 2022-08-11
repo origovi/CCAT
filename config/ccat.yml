@@ -7,7 +7,8 @@ common:
       right_detections:         "/camera/right/detections"
     output:
       cones:                    "/AS/P/ccat/cones"
-  
+      num_cones:                "/AS/P/ccat/num_cones"
+
 manager:
   buffer_temp_mem:              1.0                                 # float (s)
   only_lidar:                   false                               # bool, specifies whether or not to ignore the cameras

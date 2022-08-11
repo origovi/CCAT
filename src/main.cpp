@@ -10,6 +10,7 @@
  */
 
 #include <as_msgs/ConeArray.h>
+#include <shrd_msgs/NumCones.h>
 #include <ccat/ExtrinsicsConfig.h>
 #include <ccat/TimeDiffConfig.h>
 #include <dynamic_reconfigure/server.h>
@@ -42,6 +43,7 @@ int main(int argc, char **argv) {
 
   /* Publisher */
   ros::Publisher pubCones = nh->advertise<as_msgs::ConeArray>(params.common.topics.output.cones, 1);
+  ros::Publisher pubNumCones = nh->advertise<shrd_msgs::NumCones>(params.common.topics.output.numCones, 1);
 
   /* Dynamic Reconfigure of camera extrinsics */
   // We need to declare two NHs because there must be only one dyn_rec::Server per NH
@@ -54,7 +56,7 @@ int main(int argc, char **argv) {
   dynamic_reconfigure::Server<ccat::TimeDiffConfig> cfgSrv_timeDiff;
 
   /* Manager initilization */
-  manager.init(nh, params, pubCones, cfgSrv_extr_left, cfgSrv_extr_right, &calibQueue, cfgSrv_timeDiff);
+  manager.init(nh, params, pubCones, pubNumCones, cfgSrv_extr_left, cfgSrv_extr_right, &calibQueue, cfgSrv_timeDiff);
 
   // Enjoy
   ros::spin();

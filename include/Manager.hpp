@@ -13,12 +13,13 @@
 #define MANAGER_HPP
 
 #include <as_msgs/ObservationArray.h>
+#include <shrd_msgs/NumCones.h>
 #include <ccat/ExtrinsicsConfig.h>
 #include <ccat/TimeDiffConfig.h>
 #include <dynamic_reconfigure/server.h>
+#include <eigen_conversions/eigen_msg.h>
 #include <geometry_msgs/PoseArray.h>
 #include <nav_msgs/Odometry.h>
-#include <eigen_conversions/eigen_msg.h>
 #include <omp.h>
 #include <ros/callback_queue.h>
 #include <ros/ros.h>
@@ -59,7 +60,7 @@ class Manager {
   Buffer<nav_msgs::Odometry::ConstPtr> *buffOdom_;
   as_msgs::ObservationArray::ConstPtr latestObs_;  // Buffer don't needed
 
-  ros::Publisher conesPub_;
+  ros::Publisher conesPub_, numConesPub_;
   Params::Manager params_;
   ros::CallbackQueue *calibQueue_;
   double timeDiff_;
@@ -105,7 +106,7 @@ class Manager {
    * @brief Updates the working mode. LiDAR only, camera only, ...
    */
   void updateMode();
-  
+
   /**
    * @brief Determines if the Buffer \a buff has valid data
    * 
@@ -132,12 +133,15 @@ class Manager {
    * @param nh
    * @param params 
    * @param conesPub 
+   * @param numConesPub 
    * @param cfgSrv_extr_left 
    * @param cfgSrv_extr_right 
    * @param calibQueue 
+   * @param cfgSrv_timeDiff
    */
   void init(ros::NodeHandle *const nh, const Params &params,
             const ros::Publisher &conesPub,
+            const ros::Publisher &numConesPub,
             dynamic_reconfigure::Server<ccat::ExtrinsicsConfig> &cfgSrv_extr_left,
             dynamic_reconfigure::Server<ccat::ExtrinsicsConfig> &cfgSrv_extr_right,
             ros::CallbackQueue *const calibQueue,
@@ -150,7 +154,6 @@ class Manager {
   void odomCallback(const nav_msgs::Odometry::ConstPtr &odom);
   void obsCallback(const as_msgs::ObservationArray::ConstPtr &observations);
   void cfgCallback(const ccat::TimeDiffConfig &config, uint32_t level);
-
 };
 
 #endif  // MANAGER_HPP

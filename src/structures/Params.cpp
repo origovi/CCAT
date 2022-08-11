@@ -11,6 +11,7 @@ Params::Params(const ros::NodeHandle &nh) {
   nh.param<std::string>("/AS/P/ccat/common/topics/input/left_detections", common.topics.input.left_bbs, "/camera/left/detections");
   nh.param<std::string>("/AS/P/ccat/common/topics/input/right_detections", common.topics.input.right_bbs, "/camera/right/detections");
   nh.param<std::string>("/AS/P/ccat/common/topics/output/cones", common.topics.output.cones, "/AS/P/ccat/cones");
+  nh.param<std::string>("/AS/P/ccat/common/topics/output/num_cones", common.topics.output.numCones, "/AS/P/ccat/num_cones");
 
 
   /* ------------------------------------------------------------------------ */

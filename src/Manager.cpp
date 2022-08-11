@@ -15,26 +15,35 @@ Manager::~Manager() {
 
 void Manager::run() const {
   Time::tick("main");
-#pragma omp parallel num_threads(2)
-#pragma omp single
+  #pragma omp parallel num_threads(2)
+  #pragma omp single
   {
     // std::cout << omp_get_num_threads() << " threads" << std::endl;
     preproc->run(lastRunObs_, lastRunOdom_.first, lastRunLeftBBs_, lastRunRightBBs_);
     tracker->accumulate(preproc->getData());
     calibQueue_->callAvailable();
-#pragma omp task
+    #pragma omp task
     matcherL->run(tracker->getObservations(), preproc->getBBs(matcherL->which));
-#pragma omp task
+    #pragma omp task
     matcherR->run(tracker->getObservations(), preproc->getBBs(matcherR->which));
-#pragma omp taskwait
+    #pragma omp taskwait
     merger->run(matcherL->getData(), matcherR->getData());
     tracker->run(merger->getData());
-    std::cout << std::endl;
-    //preproc->reset();
     if (tracker->hasData()) conesPub_.publish(tracker->getData());
+    std::cout << std::endl;
   }
   Time::tock("main");
 
+  // Publish number of cones (pel Poooool)
+  if (tracker->getActualNumCones() > 0) {
+    shrd_msgs::NumCones nc;
+    nc.header = lastRunObs_->header;
+    nc.cones_count_actual = (uint8_t) tracker->getActualNumCones();
+    nc.cones_count_all = (uint32_t) tracker->getTotalNumCones();
+    numConesPub_.publish(nc);
+  }
+
+  // Enter calib loop if possible AND allowed
   if (params_.static_calib and lastRunLeftBBs_ != nullptr and lastRunRightBBs_ != nullptr)
     calibLoop();
 }
@@ -102,11 +111,7 @@ void Manager::runIfPossible(const Update &update) {
       }
       ROS_WARN("BOTH_CAMS");
     }
-    if (odom.second < lastRunOdom_.second) {
-      ROS_WARN("EP");
-      std::cout << odom.second << std::endl;
-      return;
-    }
+    if (odom.second < lastRunOdom_.second) return;
   }
 
   lastRunObs_ = latestObs_;
@@ -188,11 +193,13 @@ Manager &Manager::getInstance() {
 
 void Manager::init(ros::NodeHandle *const nh, const Params &params,
                    const ros::Publisher &conesPub,
+                   const ros::Publisher &numConesPub,
                    dynamic_reconfigure::Server<ccat::ExtrinsicsConfig> &cfgSrv_extr_left,
                    dynamic_reconfigure::Server<ccat::ExtrinsicsConfig> &cfgSrv_extr_right,
                    ros::CallbackQueue *const calibQueue,
                    dynamic_reconfigure::Server<ccat::TimeDiffConfig> &cfgSrv_timeDiff) {
   conesPub_ = conesPub;
+  numConesPub_ = numConesPub;
   params_ = params.manager;
   calibQueue_ = calibQueue;
 

@@ -36,6 +36,7 @@ struct Params {
       } input;
       struct {
         std::string cones;
+        std::string numCones;
       } output;
     } topics;
   } common;

@@ -91,9 +91,9 @@ void Cone::updateMetadata() {
   if (heapM_biggestType != ConeUpdate::NONE) {
     metadata_.type = heapM_biggestType;
   }
-  if (!heap_isMatched and Cone::bothCams and heap_meanHeur > 1/params.dist_cp_to_false_positives) {
-    metadata_.type = ConeUpdate::NONE;
-  }
+  // if (!heap_isMatched and Cone::bothCams and heap_meanHeur > 1/params.dist_cp_to_false_positives) {
+  //   metadata_.type = ConeUpdate::NONE;
+  // }
 }
 
 /**

@@ -62,6 +62,11 @@ class Tracker {
   as_msgs::ConeArray currentCones_;
 
   /**
+   * @brief Number of cones seen in last iteration
+   */
+  size_t actualConeNumber_;
+
+  /**
    * @brief The Visualization object for the Tracker, it will allow us to
    * publish all debug messages.
    */
@@ -120,6 +125,20 @@ class Tracker {
    * @return a vector of shared pointers to Observation(s)
    */
   std::vector<Observation::Ptr> getObservations() const;
+
+  /**
+   * @brief Getter for the number of actual cones required for FSG.
+   * 
+   * @return the number of cones seen in actual's iteration
+   */
+  const size_t &getActualNumCones() const;
+
+  /**
+   * @brief Getter for the number of total cones required for FSG.
+   * 
+   * @return the number of cones seen historically
+   */
+  size_t getTotalNumCones() const;
 
   /**
    * @brief Returns the data (cones correctly classified) in as_msgs format-

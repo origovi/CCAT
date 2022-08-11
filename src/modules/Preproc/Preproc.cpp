@@ -3,7 +3,7 @@
 /**
  * CONSTRUCTORS AND DESTRUCTOR
  */
-Preproc::Preproc() : hasData_(false) {}
+Preproc::Preproc() {}
 
 /**
  * PRIVATE METHODS
@@ -73,10 +73,6 @@ void Preproc::init(const Params::Preproc &params) {
   vis_.init(params);
 }
 
-void Preproc::reset() {
-  hasData_ = false;
-}
-
 /* Callbacks */
 
 void Preproc::run(const as_msgs::ObservationArray::ConstPtr &newObservations,
@@ -117,7 +113,6 @@ void Preproc::run(const as_msgs::ObservationArray::ConstPtr &newObservations,
     currentObservationsStamp_ = newObservations->header.stamp;
   }
   // std::cout << "orig size: " << newObservations->observations.size() << " process size: " << currentObservations_.size() << std::endl;
-  hasData_ = true;
 }
 
 /* Getters */
@@ -135,10 +130,6 @@ const geometry_msgs::PoseArray::ConstPtr &Preproc::getBBs(const Matcher::Which &
 
 std::pair<const std::vector<Observation> &, const Eigen::Affine3d &> Preproc::getData() const {
   return {currentObservations_, carTf_};
-}
-
-const bool &Preproc::hasData() const {
-  return hasData_;
 }
 
 const Eigen::Affine3d &Preproc::getCarTf() const {

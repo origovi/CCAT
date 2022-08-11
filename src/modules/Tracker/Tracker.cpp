@@ -43,6 +43,7 @@ void Tracker::init(const Params::Tracker &params) {
 }
 
 void Tracker::accumulate(const std::pair<const std::vector<Observation> &, const Eigen::Affine3d &> &data) {
+  size_t oldNumCones = cones_.size();
   if (cones_.empty()) {
     for (const Observation &obs : data.first) {
       cones_.emplace_hint(cones_.end(), std::piecewise_construct, std::forward_as_tuple(nextId_), std::forward_as_tuple(obs, nextId_));
@@ -68,6 +69,9 @@ void Tracker::accumulate(const std::pair<const std::vector<Observation> &, const
       }
     }
   }
+
+  // Update actual number of cones
+  actualConeNumber_ = cones_.size() - oldNumCones;
 
   // Update the Observations to local space
   for (std::map<size_t, Cone>::iterator it = cones_.begin(); it != cones_.end(); it++) {
@@ -112,6 +116,14 @@ std::vector<Observation::Ptr> Tracker::getObservations() const {
     res.push_back(it->second.obs);
   }
   return res;
+}
+
+const size_t &Tracker::getActualNumCones() const {
+  return actualConeNumber_;
+}
+
+size_t Tracker::getTotalNumCones() const {
+  return cones_.size();
 }
 
 const as_msgs::ConeArray &Tracker::getData() {
