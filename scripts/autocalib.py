@@ -32,7 +32,7 @@ if __name__ == "__main__":
     rospy.init_node('calibration')
     autocalib_enabled = rospy.get_param("/AS/P/ccat/matcher/common/autocalib", False)
     if (not autocalib_enabled):
-        rospy.signal_shutdown()
+        rospy.signal_shutdown('Autocalib parameter is false')
     
     s = rospy.Service("/AS/P/ccat/calibration", CalibReq, calib)
     rospy.loginfo("[ccat/calibration] Ready to calibrate.")

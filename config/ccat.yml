@@ -33,7 +33,7 @@ matcher:
     cone_height:                0.325                               # double (m)
     cone_width:                 0.228                               # double (m), unused
     colors_in_projected:        false                               # bool, the color of the cone points and the BB(s) will be the same in a matching
-    autocalib:                  false                                # bool, activate or deactivate autocalib srv
+    autocalib:                  false                               # bool, activate or deactivate autocalib srv
     autocalib_service_addr:     "/AS/P/ccat/calibration"
     min_calib_match_num:        5                                   # int (num), minimum number of matches to trigger autocalib
     max_calib_change_trans:     0.001                               # float (m), minimum amount of translation change to consider a Matcher "calibrated"
