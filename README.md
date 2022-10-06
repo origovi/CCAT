@@ -32,7 +32,7 @@ This is: { $(p_{ccat},t_{ccat},id_{ccat},\alpha_{ccat})\mid p_{ccat} \in \mathbb
 ## Pipeline
 In order to achieve the desired functionalities, the system pipeline is divided into modules to improve code readability and ensure maintainability. As shown in *Fig. 2*, there are 5 different modules, each one performs a very specific task and is designed to not have any dependency with other modules.
 <p align="center">
-  <img src="./documentation/assets/ccat_pipeline.png" alt="CCAT pipeline" width="400" /><br />
+  <img src="./documentation/assets/ccat_pipeline.jpg" alt="CCAT pipeline" width="400" /><br />
   Figure 2: CCAT pipeline module structure
 </p>
 
