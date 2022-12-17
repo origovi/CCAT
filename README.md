@@ -82,7 +82,7 @@ Result can be visualized in *Fig. 3*.
 The Merger module is in charge of merging the output of the two Merger modules. This is necessary because the two Matchers can output the same cone due to the small zone of overlap between the two cameras; i.e. the same cone can be detected by the two cameras.\
 Tasks:
 **Merge** all Matchers' output into one single list such that there are no two cones with same $id$.
-- If multiple cones with same $id$s are found, the one with a smaller matching distance $(d_{match})$ will prevail.
+- If multiple cones with same $id$ are found, the one with a smaller matching distance $(d_{match})$ will prevail.
 
 ### Tracker
 The Tracker module is the only module in which cones are stored between iterations. The objective of this module is to keep track of all observations and decide which one should be output and the type of it.\
